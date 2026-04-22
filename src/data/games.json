@@ -1,0 +1,254 @@
+[
+  {
+    "id": "the-crew-9th-planet",
+    "name": "스페이스 크루: 9번째 행성을 찾아서",
+    "image": "https://boardlife.co.kr/data/boardgame_strategy_reg/2020/09/28/1601282966-492612.jpg",
+    "thumbnail": "https://boardlife.co.kr/data/boardgame_strategy_reg/2020/09/28/1601282966-492612.jpg",
+    "category": "가족게임",
+    "theme": "카드 게임, SF 공상 과학, 우주 탐험",
+    "mechanics": "협력 게임, 핸드 관리, 트릭-테이킹",
+    "description": "협력형 트릭 테이킹 보드게임의 혁명. 50개의 미션을 통해 9번째 행성을 찾아 떠나는 우주 비행사가 되어보세요.",
+    "year": "2019",
+    "minPlayers": "2",
+    "maxPlayers": "5",
+    "playingTime": "20",
+    "rating": "7.9",
+    "weight": "1.98",
+    "boardlifeId": "13426",
+    "links": {
+      "naverBlog": "https://search.naver.com/search.naver?where=blog&query=%EC%8A%A4%ED%8E%98%EC%9D%B4%EC%8A%A4+%ED%81%AC%EB%A3%A8+%EB%B3%B4%EB%93%9C%EA%B2%8C%EC%9E%84+%EB%A6%AC%EB%B7%B0",
+      "youtubeRules": "https://www.youtube.com/results?search_query=%EC%8A%A4%ED%8E%98%EC%9D%B4%EC%8A%A4+%ED%81%AC%EB%A3%A8+%EB%A3%B0+%EC%84%A4%EB%AA%85"
+    }
+  },
+  {
+    "id": "suspect-game-reload",
+    "name": "서스펙트 게임: 리로드",
+    "image": "https://boardlife.co.kr/wys2/swf_upload/2022/11/09/166792414263595_lg.png",
+    "thumbnail": "https://boardlife.co.kr/wys2/swf_upload/2022/11/09/166792414263595_lg.png",
+    "category": "테마게임",
+    "theme": "살인/미스터리",
+    "mechanics": "롤플레잉, 스토리텔링",
+    "description": "서스펙트 게임의 후속작으로, 더욱 정교해진 시나리오와 트릭을 선보입니다.",
+    "year": "2022",
+    "minPlayers": "4",
+    "maxPlayers": "4",
+    "playingTime": "150",
+    "rating": "8.5",
+    "weight": "2.5",
+    "boardlifeId": "14523",
+    "links": {
+      "naverBlog": "https://search.naver.com/search.naver?where=blog&query=%EC%84%9C%EC%8A%A4%ED%8E%99%ED%8A%B8+%EA%B2%8C%EC%9E%84+%EB%A6%AC%EB%A1%9C%EB%93%9C+%ED%9B%84%EA%B8%B0",
+      "youtubeRules": "https://www.youtube.com/results?search_query=%EC%84%9C%EC%8A%A4%ED%8E%99%ED%8A%B8+%EA%B2%8C%EC%9E%84+%EB%A6%AC%EB%A1%9C%EB%93%9C+%EB%A3%B0"
+    }
+  },
+  {
+    "id": "chronicles-of-crime",
+    "name": "사건의 재구성",
+    "image": "https://boardlife.co.kr/data/boardgame_strategy/2021/02/03/1612345845-58801.jpg",
+    "thumbnail": "https://boardlife.co.kr/data/boardgame_strategy/2021/02/03/1612345845-58801.jpg",
+    "category": "테마게임",
+    "theme": "모험, 살인/미스터리, 추론",
+    "mechanics": "협력 게임, 스토리텔링, 솔로 게임, 시나리오 기반",
+    "description": "앱과 VR 기술을 접목한 혁신적인 추리 게임입니다.",
+    "year": "2018",
+    "minPlayers": "1",
+    "maxPlayers": "4",
+    "playingTime": "60",
+    "rating": "7.9",
+    "weight": "2.1",
+    "boardlifeId": "9665",
+    "links": {
+      "naverBlog": "https://search.naver.com/search.naver?where=blog&query=%EC%82%AC%EA%B1%B4%EC%9D%98+%EC%9E%AC%EA%B5%AC%EC%84%B1+%EB%B3%B4%EB%93%9C%EA%B2%8C%EC%9E%84+%EB%A6%AC%EB%B7%B0",
+      "youtubeRules": "https://www.youtube.com/results?search_query=%EC%82%AC%EA%B1%B4%EC%9D%98+%EC%9E%AC%EA%B5%AC%EC%84%B1+%EB%A3%B0"
+    }
+  },
+  {
+    "id": "canvas",
+    "name": "캔버스",
+    "image": "https://boardlife.co.kr/data/boardgame_strategy_reg/2020/11/16/1605453533-723511.jpg",
+    "thumbnail": "https://boardlife.co.kr/data/boardgame_strategy_reg/2020/11/16/1605453533-723511.jpg",
+    "category": "카드 게임, 퍼즐, 추상전략",
+    "theme": "미술, 회화",
+    "mechanics": "핸드 관리, 셋 컬렉션, 솔로 게임, 레이어링, 오픈 드래프팅",
+    "description": "투명 카드를 겹쳐서 자신만의 그림을 완성하는 아름다운 퍼즐 게임입니다.",
+    "year": "2021",
+    "minPlayers": "1",
+    "maxPlayers": "5",
+    "playingTime": "30",
+    "rating": "7.5",
+    "weight": "1.6",
+    "boardlifeId": "13807",
+    "links": {
+      "naverBlog": "https://search.naver.com/search.naver?where=blog&query=%EC%BA%94%EB%B2%84%EC%8A%A4+%EB%B3%B4%EB%93%9C%EA%B2%8C%EC%9E%84+%EB%A6%AC%EB%B7%B0",
+      "youtubeRules": "https://www.youtube.com/results?search_query=%EC%BA%94%EB%B2%84%EC%8A%A4+%EB%B3%B4%EB%93%9C%EA%B2%8C%EC%9E%84+%EB%A3%B0"
+    }
+  },
+  {
+    "id": "ahcg-core",
+    "name": "아컴 호러: 카드 게임",
+    "image": "https://boardlife.co.kr/wys2/swf_upload/2022/07/18/1658093520711797_lg.jpg",
+    "thumbnail": "https://boardlife.co.kr/wys2/swf_upload/2022/07/18/1658093520711797_lg.jpg",
+    "category": "모험, 카드 게임, 판타지, 공포, 소설-기반, 컴포넌트 수집",
+    "theme": "크툴루 신화",
+    "mechanics": "액션 포인트, 협력 게임, 핸드 관리, 조립 보드, 롤플레잉, 플레이어별 특수능력, 지역 이동, 덱/백/풀 빌딩",
+    "description": "러브크래프트의 크툴루 신화를 배경으로 하는 협력형 LCG 게임입니다.",
+    "year": "2016",
+    "minPlayers": "1",
+    "maxPlayers": "2",
+    "playingTime": "60",
+    "rating": "8.1",
+    "weight": "3.4",
+    "boardlifeId": "7501",
+    "links": {
+      "naverBlog": "https://search.naver.com/search.naver?where=blog&query=%EC%95%84%EC%BB%B4+%ED%98%B8%EB%9F%AC+%EC%B9%B4%EB%93%9C+%EA%B2%8C%EC%9E%84+%EB%A6%AC%EB%B7%B0",
+      "youtubeRules": "https://www.youtube.com/results?search_query=%EC%95%84%EC%BB%B4+%ED%98%B8%EB%9F%AC+%EC%B9%B4%EB%93%9C+%EA%B2%8C%EC%9E%84+%EB%A3%B0"
+    }
+  },
+  {
+    "id": "gloomhaven-jotl",
+    "name": "글룸헤이븐: 사자의 턱",
+    "image": "https://boardlife.co.kr/wys2/swf_upload/2022/01/25/1643040683132329_lg.jpg",
+    "thumbnail": "https://boardlife.co.kr/wys2/swf_upload/2022/01/25/1643040683132329_lg.jpg",
+    "category": "모험, 탐험, 판타지, 전투, 미니어처",
+    "theme": "판타지, 모험",
+    "mechanics": "협력 게임, 핸드 관리, 동시 액션 선택, 플레이어별 특수능력, 캠페인/카드 운용 전투, 그리드 이동, 솔로 게임, 시나리오 기반, 덱 구성, 의사소통 제한",
+    "description": "전설적인 게임 글룸헤이븐의 입문용 버전입니다.",
+    "year": "2020",
+    "minPlayers": "1",
+    "maxPlayers": "4",
+    "playingTime": "90",
+    "rating": "8.7",
+    "weight": "3.6",
+    "boardlifeId": "12900",
+    "links": {
+      "naverBlog": "https://search.naver.com/search.naver?where=blog&query=%EA%B8%80%EB%A3%B8%ED%97%A4%EC%9D%B4%EB%B8%90+%EC%82%AC%EC%9E%90%EC%9D%98+%ED%84%B1+%ED%9B%84%EA%B8%B0",
+      "youtubeRules": "https://www.youtube.com/results?search_query=%EA%B8%80%EB%A3%B8%ED%97%A4%EC%9D%B4%EB%B8%90+%EC%82%AC%EC%9E%90%EC%9D%98+%ED%84%B1+%EB%A3%B0"
+    }
+  },
+  {
+    "id": "tichu",
+    "name": "티츄",
+    "image": "https://boardlife.co.kr/data/photo/2024/06/16/1718472191-873526.jpg",
+    "thumbnail": "https://boardlife.co.kr/data/photo/2024/06/16/1718472191-873526.jpg",
+    "category": "카드 게임",
+    "theme": "전통",
+    "mechanics": "핸드 관리, 팀 기반 게임, 사다리 타기, 예측 입찰",
+    "description": "전 세계적으로 사랑받는 2대2 팀 기반 클라이밍 카드 게임입니다.",
+    "year": "1991",
+    "minPlayers": "4",
+    "maxPlayers": "4",
+    "playingTime": "60",
+    "rating": "7.6",
+    "weight": "2.3",
+    "boardlifeId": "478",
+    "links": {
+      "naverBlog": "https://search.naver.com/search.naver?where=blog&query=%ED%8B%B0%EC%B8%84+%EB%B3%B4%EB%93%9C%EA%B2%8C%EC%9E%84+%EB%A6%AC%EB%B7%B0",
+      "youtubeRules": "https://www.youtube.com/results?search_query=%ED%8B%B0%EC%B8%84+%EB%A3%B0"
+    }
+  },
+  {
+    "id": "ghost-stories",
+    "name": "고스트 스토리즈",
+    "image": "https://boardlife.co.kr/wys2/swf_upload/2022/01/16/164234209218587_lg.jpg",
+    "thumbnail": "https://boardlife.co.kr/wys2/swf_upload/2022/01/16/164234209218587_lg.jpg",
+    "category": "공포, 판타지, 전투",
+    "theme": "공포, 판타지, 동양풍",
+    "mechanics": "협력 게임, 주사위 굴림, 조립 보드, Variable Player Powers, 그리드 이동, 솔로 게임",
+    "description": "마을을 습격하는 유령들에 맞서 마을을 지키는 도사들의 활약.",
+    "year": "2008",
+    "minPlayers": "1",
+    "maxPlayers": "4",
+    "playingTime": "60",
+    "rating": "7.0",
+    "weight": "2.9",
+    "boardlifeId": "118",
+    "links": {
+      "naverBlog": "https://search.naver.com/search.naver?where=blog&query=%EA%B3%A0%EC%8A%A4%ED%8A%B8+%EC%8A%A4%ED%86%A0%EB%A6%AC%EC%A6%88+%EB%B3%B4%EB%93%9C%EA%B2%8C%EC%9E%84+%ED%9B%84%EA%B8%B0",
+      "youtubeRules": "https://www.youtube.com/results?search_query=%EA%B3%A0%EC%8A%A4%ED%8A%B8+%EC%8A%A4%ED%86%A0%EB%A6%AC%EC%A6%88+%EB%A3%B0"
+    }
+  },
+  {
+    "id": "pandemic-legacy-s0",
+    "name": "팬데믹 레거시 시즌 0",
+    "image": "https://boardlife.co.kr/data/boardgame_strategy_reg/2020/09/28/1601282799-93154.jpg",
+    "thumbnail": "https://boardlife.co.kr/data/boardgame_strategy_reg/2020/09/28/1601282799-93154.jpg",
+    "category": "스파이/첩보원",
+    "theme": "첩보, 냉전",
+    "mechanics": "액션 포인트, 협력 게임, 핸드 관리, 셋 컬렉션, Variable Player Powers, 포인트 이동, 레거시 게임",
+    "description": "냉전 시대를 배경으로 하는 팬데믹 레거시 시리즈의 프리퀄.",
+    "year": "2020",
+    "minPlayers": "2",
+    "maxPlayers": "4",
+    "playingTime": "60",
+    "rating": "8.9",
+    "weight": "3.1",
+    "boardlifeId": "13425",
+    "links": {
+      "naverBlog": "https://search.naver.com/search.naver?where=blog&query=%ED%8C%AC%EB%8D%B0%EB%AF%B9+%EB%A0%88%EA%B1%B0%EC%8B%9C+%EC%8B%9C%EC%A6%8C+0+%ED%9B%84%EA%B8%B0",
+      "youtubeRules": "https://www.youtube.com/results?search_query=%ED%8C%AC%EB%8D%B0%EB%AF%B9+%EB%A0%88%EA%B1%B0%EC%8B%9C+%EC%8B%9C%EC%A6%8C+0+%EB%A3%B0"
+    }
+  },
+  {
+    "id": "pandemic",
+    "name": "팬데믹",
+    "image": "https://boardlife.co.kr/wys2/swf_upload/2022/01/29/16434381802314_lg.jpg",
+    "thumbnail": "https://boardlife.co.kr/wys2/swf_upload/2022/01/29/16434381802314_lg.jpg",
+    "category": "의학",
+    "theme": "의학, 전염병",
+    "mechanics": "협력 게임, 핸드 관리, 셋 컬렉션, Variable Player Powers, 포인트 이동",
+    "description": "전 세계로 퍼지는 4가지 질병을 막아내는 협력 게임.",
+    "year": "2008",
+    "minPlayers": "2",
+    "maxPlayers": "4",
+    "playingTime": "45",
+    "rating": "7.5",
+    "weight": "2.4",
+    "boardlifeId": "84",
+    "links": {
+      "naverBlog": "https://search.naver.com/search.naver?where=blog&query=%ED%8C%AC%EB%8D%B0%EB%AF%B9+%EB%B3%B4%EB%93%9C%EA%B2%8C%EC%9E%84+%EB%A6%AC%EB%B7%B0",
+      "youtubeRules": "https://www.youtube.com/results?search_query=%ED%8C%AC%EB%8D%B0%EB%AF%B9+%EB%A3%B0"
+    }
+  },
+  {
+    "id": "7-wonders-duel",
+    "name": "세븐 원더스 대결",
+    "image": "https://boardlife.co.kr/data/boardgame_strategy/2021/03/09/1615276187-302156.png",
+    "thumbnail": "https://boardlife.co.kr/data/boardgame_strategy/2021/03/09/1615276187-302156.png",
+    "category": "고대, 카드 게임, 도시 건설, 문명, 경제",
+    "theme": "문명, 고대",
+    "mechanics": "조립 보드, 셋 컬렉션, Variable Player Powers, 게임 종료 보너스, 수입, 테크 트리",
+    "description": "2인 전용 문명 발전 게임의 명작.",
+    "year": "2015",
+    "minPlayers": "2",
+    "maxPlayers": "2",
+    "playingTime": "30",
+    "rating": "8.1",
+    "weight": "2.2",
+    "boardlifeId": "5222",
+    "links": {
+      "naverBlog": "https://search.naver.com/search.naver?where=blog&query=%EC%84%B8%EB%B8%90+%EC%9B%90%EB%8D%94%EC%8A%A4+%EB%8C%80%EA%B2%B0+%EB%A6%AC%EB%B7%B0",
+      "youtubeRules": "https://www.youtube.com/results?search_query=%EC%84%B8%EB%B8%90+%EC%9B%90%EB%8D%94%EC%8A%A4+%EB%8C%80%EA%B2%B0+%EB%A3%B0"
+    }
+  },
+  {
+    "id": "crime-hotel",
+    "name": "크라임 호텔",
+    "image": "https://boardlife.co.kr/data/boardgame_strategy_reg/2018/11/15/1542213762-406175.jpg",
+    "thumbnail": "https://boardlife.co.kr/data/boardgame_strategy_reg/2018/11/15/1542213762-406175.jpg",
+    "category": "카드 게임, 살인/미스터리",
+    "theme": "살인/미스터리",
+    "mechanics": "트릭-테이킹, 일꾼 놓기",
+    "description": "호텔의 빈 방 카드를 통해 범인을 추리해내는 게임.",
+    "year": "2017",
+    "minPlayers": "3",
+    "maxPlayers": "4",
+    "playingTime": "45",
+    "rating": "6.8",
+    "weight": "1.8",
+    "boardlifeId": "10459",
+    "links": {
+      "naverBlog": "https://search.naver.com/search.naver?where=blog&query=%ED%81%AC%EB%9D%BC%EC%9E%84+%ED%98%B8%ED%85%94+%EB%B3%B4%EB%93%9C%EA%B2%8C%EC%9E%84+%EB%A6%AC%EB%B7%B0",
+      "youtubeRules": "https://www.youtube.com/results?search_query=%ED%81%AC%EB%9D%BC%EC%9E%84+%ED%98%B8%ED%85%94+%EB%A3%B0"
+    }
+  }
+]
