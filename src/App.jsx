@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { LayoutGrid, List, Dice5 } from 'lucide-react';
+import { LayoutGrid, List, Dice5, Sun, Moon, Search, RotateCcw } from 'lucide-react';
 import { collection, onSnapshot, addDoc, deleteDoc, doc } from "firebase/firestore";
 import { db } from "./firebase";
 import GameCard from './components/GameCard';
@@ -28,22 +28,35 @@ function Chip({ label, sub, active, onClick }) {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '3px',
+        gap: '4px',
         padding: '5px 12px',
-        borderRadius: '20px',
-        border: active ? 'none' : '1px solid var(--border-medium)',
+        borderRadius: '10px',
+        border: '1px solid var(--border-medium)',
         background: active ? 'var(--accent-primary)' : 'transparent',
         color: active ? '#fff' : 'var(--text-secondary)',
         fontSize: '12px',
-        fontWeight: active ? '600' : '400',
+        fontWeight: active ? '600' : '500',
         cursor: 'pointer',
-        transition: 'all 0.15s ease',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         whiteSpace: 'nowrap',
         fontFamily: 'inherit',
+        boxShadow: active ? '0 4px 10px var(--accent-glow)' : 'none',
+      }}
+      onMouseEnter={e => {
+        if (!active) {
+          e.currentTarget.style.background = 'var(--bg-hover)';
+          e.currentTarget.style.borderColor = 'var(--accent-primary)';
+        }
+      }}
+      onMouseLeave={e => {
+        if (!active) {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.borderColor = 'var(--border-medium)';
+        }
       }}
     >
       {label}
-      {sub && <span style={{ opacity: 0.75, fontSize: '10px' }}>{sub}</span>}
+      {sub && <span style={{ opacity: 0.7, fontSize: '10px', fontWeight: '400' }}>{sub}</span>}
     </button>
   );
 }
@@ -56,6 +69,20 @@ function App() {
   const [viewMode, setViewMode] = useState('grid');
   const [showEnricher, setShowEnricher] = useState(false);
   const [filters, setFilters] = useState({ search: '', players: '', difficulty: '', category: '' });
+  
+  // Theme logic
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "games"), (snapshot) => {
@@ -116,7 +143,7 @@ function App() {
   const hasActiveFilters = filters.search || filters.players || filters.difficulty || filters.category;
 
   return (
-    <div className="mica-bg" style={{ minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div className="container">
 
         {/* ── Header ── */}
@@ -124,151 +151,173 @@ function App() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '24px 0 20px',
-          marginBottom: '4px',
+          padding: '16px 0 24px',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
-              width: '36px', height: '36px',
-              background: 'var(--accent-primary)',
-              borderRadius: '8px',
+              width: '38px', height: '38px',
+              background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+              borderRadius: '10px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 6px 12px var(--accent-glow)',
             }}>
               <Dice5 size={20} color="#fff" />
             </div>
             <div>
-              <h1 style={{ fontSize: '20px', fontWeight: '700', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+              <h1 style={{ 
+                fontSize: '20px', 
+                fontWeight: '800', 
+                letterSpacing: '-0.03em', 
+                lineHeight: 1,
+                background: 'linear-gradient(135deg, var(--text-primary), var(--accent-primary))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                marginBottom: '2px'
+              }}>
                 Board Game Collector
               </h1>
-              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
-                {loading ? '로딩 중...' : `${gameCollection.length}개의 보드게임`}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className="badge badge-category" style={{ fontSize: '9px', padding: '1px 6px' }}>
+                  {loading ? '데이터 로드 중...' : `${gameCollection.length} Games`}
+                </span>
+              </div>
             </div>
           </div>
 
-          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
-            + AI에게 추가 요청
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button 
+              onClick={toggleTheme}
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '10px',
+                width: '34px', height: '34px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: 'var(--text-secondary)',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-medium)'}
+              title={theme === 'light' ? '다크 모드로 전환' : '라이트 모드로 전환'}
+            >
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+            <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+              + AI에게 추가 요청
+            </button>
+          </div>
         </header>
 
         {/* ── Filter Bar ── */}
-        <div style={{
-          background: 'rgba(255,255,255,0.65)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: '12px',
-          padding: '14px 16px',
-          marginBottom: '20px',
+        <div className="glass" style={{
+          borderRadius: '16px',
+          padding: '16px',
+          marginBottom: '24px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
+          gap: '16px',
         }}>
-          {/* Row 1: Players + Difficulty chips */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: '4px', whiteSpace: 'nowrap' }}>
-              인원
-            </span>
-            {PLAYER_OPTIONS.map(n => (
-              <Chip
-                key={n}
-                label={`${n}인`}
-                active={filters.players === String(n)}
-                onClick={() => setFilters(f => ({ ...f, players: f.players === String(n) ? '' : String(n) }))}
-              />
-            ))}
-
-            <div style={{ width: '1px', height: '20px', background: 'var(--border-medium)', margin: '0 4px' }} />
-
-            <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: '4px', whiteSpace: 'nowrap' }}>
-              난이도
-            </span>
-            {DIFFICULTY_OPTIONS.map(opt => (
-              <Chip
-                key={opt.value}
-                label={opt.label}
-                sub={opt.sub}
-                active={filters.difficulty === opt.value}
-                onClick={() => setFilters(f => ({ ...f, difficulty: f.difficulty === opt.value ? '' : opt.value }))}
-              />
-            ))}
-          </div>
-
-          {/* Row 2: Category dropdown + Search input (Side by side) */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                카테고리
+          {/* Row 1: Players + Difficulty */}
+          <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                인원
               </span>
-              <select
-                className="input-field"
-                value={filters.category}
-                onChange={(e) => setFilters(f => ({ ...f, category: e.target.value }))}
-                style={{ width: '180px' }}
-              >
-                <option value="">전체 카테고리</option>
-                {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-              </select>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {PLAYER_OPTIONS.map(n => (
+                  <Chip
+                    key={n}
+                    label={`${n}인`}
+                    active={filters.players === String(n)}
+                    onClick={() => setFilters(f => ({ ...f, players: f.players === String(n) ? '' : String(n) }))}
+                  />
+                ))}
+              </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1, maxWidth: '400px' }}>
-              <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', marginLeft: '4px' }}>
-                검색
+            <div style={{ width: '1px', height: '24px', background: 'var(--border-medium)' }} />
+
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                난이도
               </span>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {DIFFICULTY_OPTIONS.map(opt => (
+                  <Chip
+                    key={opt.value}
+                    label={opt.label}
+                    sub={opt.sub}
+                    active={filters.difficulty === opt.value}
+                    onClick={() => setFilters(f => ({ ...f, difficulty: f.difficulty === opt.value ? '' : opt.value }))}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2: Search + Category + Reset */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '12px', 
+            alignItems: 'center', 
+            paddingTop: '12px',
+            borderTop: '1px solid var(--border-subtle)' 
+          }}>
+            <div style={{ position: 'relative', flex: 1, maxWidth: '340px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
               <input
                 type="text"
                 className="input-field"
-                placeholder="게임 제목으로 검색..."
+                placeholder="어떤 게임을 찾으시나요?"
                 value={filters.search}
                 onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))}
-                style={{ flex: 1 }}
+                style={{ width: '100%', paddingLeft: '34px' }}
               />
             </div>
 
-            {/* Reserved space for Reset & Result count */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              minWidth: '180px',
-              justifyContent: 'flex-end',
-              marginLeft: 'auto'
-            }}>
-              {hasActiveFilters && (
-                <>
-                  <button
-                    onClick={() => setFilters({ search: '', players: '', difficulty: '', category: '' })}
-                    style={{
-                      background: 'none', border: '1px solid var(--border-medium)',
-                      borderRadius: '20px', padding: '4px 12px', fontSize: '11px',
-                      color: 'var(--text-secondary)', cursor: 'pointer', whiteSpace: 'nowrap',
-                      fontFamily: 'inherit', transition: 'all 0.15s',
-                    }}
-                  >
-                    ✕ 초기화
-                  </button>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                    {filteredCollection.length}개 결과
-                  </span>
-                </>
-              )}
-            </div>
+            <select
+              className="input-field"
+              value={filters.category}
+              onChange={(e) => setFilters(f => ({ ...f, category: e.target.value }))}
+              style={{ width: '160px' }}
+            >
+              <option value="">모든 카테고리</option>
+              {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeft: '1px solid var(--border-subtle)', paddingLeft: '12px' }}>
-              {/* View toggle */}
+            {hasActiveFilters && (
+              <button
+                onClick={() => setFilters({ search: '', players: '', difficulty: '', category: '' })}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  background: 'var(--accent-glow)', border: 'none',
+                  borderRadius: '8px', padding: '8px 14px', fontSize: '12px',
+                  color: 'var(--accent-primary)', fontWeight: '600', cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.filter = 'brightness(0.95)'}
+                onMouseLeave={e => e.currentTarget.style.filter = 'none'}
+              >
+                <RotateCcw size={13} /> 필터 초기화
+              </button>
+            )}
+
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '500' }}>
+                {filteredCollection.length} Results
+              </span>
               <div className="view-toggle">
                 <button
                   className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
                   onClick={() => setViewMode('grid')}
-                  title="카드 뷰"
                 >
-                  <LayoutGrid size={15} />
+                  <LayoutGrid size={16} />
                 </button>
                 <button
                   className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
                   onClick={() => setViewMode('list')}
-                  title="목록 뷰"
                 >
-                  <List size={15} />
+                  <List size={16} />
                 </button>
               </div>
             </div>
@@ -277,20 +326,17 @@ function App() {
 
         {/* ── Content ── */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '120px', color: 'var(--text-secondary)' }}>
-            <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎲</div>
-            데이터를 불러오는 중입니다...
+          <div style={{ textAlign: 'center', padding: '100px 0' }}>
+            <div className="animate-fade-in">
+              <Dice5 size={48} className="animate-spin" style={{ color: 'var(--accent-primary)', marginBottom: '16px' }} />
+              <p style={{ color: 'var(--text-secondary)', fontSize: '16px' }}>보드게임을 불러오는 중...</p>
+            </div>
           </div>
         ) : filteredCollection.length === 0 ? (
-          <div style={{
-            textAlign: 'center', padding: '80px',
-            background: '#fff', borderRadius: '12px',
-            border: '1px solid var(--border-subtle)'
-          }}>
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '15px' }}>
-              필터 조건에 맞는 게임이 없습니다.
-            </p>
+          <div className="glass animate-slide-up" style={{ textAlign: 'center', padding: '80px', borderRadius: '24px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>검색 결과가 없습니다</h3>
+            <p style={{ color: 'var(--text-secondary)' }}>다른 검색어나 필터를 적용해 보세요.</p>
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid-layout animate-slide-up">
@@ -308,17 +354,20 @@ function App() {
 
         {/* ── Footer ── */}
         <footer style={{
-          marginTop: '48px', padding: '20px 0',
+          marginTop: '64px', padding: '32px 0',
           borderTop: '1px solid var(--border-subtle)',
           textAlign: 'center',
-          color: 'var(--text-tertiary)', fontSize: '11px'
+          color: 'var(--text-tertiary)', fontSize: '12px'
         }}>
-          © 2026 Board Game Collector · Firebase Firestore
-          <span
-            onClick={() => setShowEnricher(true)}
-            style={{ marginLeft: '12px', cursor: 'pointer', opacity: 0.3 }}
-            title="Admin: BGG Enricher"
-          >⚙</span>
+          <p>© 2026 Board Game Collector</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '12px' }}>
+            <span 
+              onClick={() => setShowEnricher(true)} 
+              style={{ cursor: 'pointer', hover: { color: 'var(--text-secondary)' } }}
+            >
+              Admin Tools
+            </span>
+          </div>
         </footer>
       </div>
 

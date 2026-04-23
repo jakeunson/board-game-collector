@@ -1,24 +1,20 @@
 import React from 'react';
 import { Users, Clock, Star, Brain } from 'lucide-react';
 
-function nameToColor(name = '') {
+function nameToGradient(name = '') {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const hue = Math.abs(hash) % 360;
-  return {
-    bg: `hsl(${hue}, 40%, 80%)`,
-    text: `hsl(${hue}, 40%, 25%)`,
-  };
+  const h = Math.abs(hash) % 360;
+  return `linear-gradient(135deg, hsl(${h}, 45%, 65%), hsl(${h}, 45%, 55%))`;
 }
 
-function GameListItem({ game, onClick, index = 0 }) {
+function GameListItem({ game, onClick }) {
   const [imgError, setImgError] = React.useState(false);
   const showImage = game.image && !imgError;
-  const colors = nameToColor(game.name);
+  const gradient = nameToGradient(game.name);
   const initial = game.name ? game.name.charAt(0) : '?';
-  const isEven = index % 2 === 0;
 
   const players = game.minPlayers && game.maxPlayers
     ? game.minPlayers === game.maxPlayers
@@ -29,31 +25,32 @@ function GameListItem({ game, onClick, index = 0 }) {
   return (
     <div
       onClick={onClick}
+      className="glass"
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '14px',
-        padding: '10px 16px',
-        background: isEven ? '#fff' : '#fafafa',
-        border: '1px solid var(--border-subtle)',
-        borderLeft: '3px solid transparent',
-        borderRadius: '6px',
+        gap: '16px',
+        padding: '12px 20px',
+        borderRadius: '12px',
         cursor: 'pointer',
-        transition: 'all 0.15s ease',
+        transition: 'all 0.2s ease',
+        borderLeft: '4px solid transparent',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.background = '#f0f6ff';
+        e.currentTarget.style.background = 'var(--bg-hover)';
         e.currentTarget.style.borderLeftColor = 'var(--accent-primary)';
-        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,90,158,0.1)';
+        e.currentTarget.style.transform = 'translateX(4px)';
+        e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.background = isEven ? '#fff' : '#fafafa';
+        e.currentTarget.style.background = 'var(--bg-card)';
         e.currentTarget.style.borderLeftColor = 'transparent';
-        e.currentTarget.style.boxShadow = 'none';
+        e.currentTarget.style.transform = 'translateX(0)';
+        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
       }}
     >
-      {/* Thumbnail or Initial */}
-      <div style={{ width: '44px', height: '44px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0 }}>
+      {/* Thumbnail */}
+      <div style={{ width: '56px', height: '56px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0 }}>
         {showImage ? (
           <img
             src={game.image}
@@ -65,9 +62,9 @@ function GameListItem({ game, onClick, index = 0 }) {
         ) : (
           <div style={{
             width: '100%', height: '100%',
-            background: colors.bg,
+            background: gradient,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '18px', fontWeight: '800', color: colors.text,
+            fontSize: '24px', fontWeight: '900', color: '#ffffff',
           }}>
             {initial}
           </div>
@@ -75,57 +72,64 @@ function GameListItem({ game, onClick, index = 0 }) {
       </div>
 
       {/* Name */}
-      <span style={{
-        flex: 1,
-        fontSize: '14px',
-        fontWeight: '600',
-        color: 'var(--text-primary)',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        minWidth: 0,
-      }} title={game.name}>
-        {game.name}
-      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <h4 style={{
+          fontSize: '15px',
+          fontWeight: '700',
+          color: 'var(--text-primary)',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          marginBottom: '4px'
+        }} title={game.name}>
+          {game.name}
+        </h4>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {game.category && (
+            <span style={{ fontSize: '11px', color: 'var(--accent-primary)', fontWeight: '600' }}>
+              {game.category.split(',')[0].trim()}
+            </span>
+          )}
+          {game.year && (
+            <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{game.year}</span>
+          )}
+        </div>
+      </div>
 
-      {/* Players */}
-      {players && (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)', width: '68px', flexShrink: 0 }}>
-          <Users size={12} /> {players}
-        </span>
-      )}
+      {/* Stats */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexShrink: 0 }}>
+        {players && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)', width: '70px' }}>
+            <Users size={14} style={{ color: 'var(--accent-primary)' }} />
+            <span>{players}</span>
+          </div>
+        )}
 
-      {/* Play Time */}
-      {game.playingTime && (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)', width: '56px', flexShrink: 0 }}>
-          <Clock size={12} /> {game.playingTime}분
-        </span>
-      )}
+        {game.playingTime && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)', width: '60px' }}>
+            <Clock size={14} style={{ color: 'var(--accent-primary)' }} />
+            <span>{game.playingTime}m</span>
+          </div>
+        )}
 
-      {/* Difficulty */}
-      {game.weight && (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)', width: '52px', flexShrink: 0 }}>
-          <Brain size={12} /> {game.weight}
-        </span>
-      )}
-
-      {/* Rating */}
-      {game.rating && (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)', width: '44px', flexShrink: 0 }}>
-          <Star size={12} style={{ color: '#f59e0b' }} /> {game.rating}
-        </span>
-      )}
-
-      {/* Badges */}
-      <div style={{ display: 'flex', gap: '5px', flexShrink: 0, minWidth: '80px', justifyContent: 'flex-end' }}>
         {game.weight && (
-          <span className="badge badge-weight">W {game.weight}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)', width: '50px' }}>
+            <Brain size={14} style={{ color: 'var(--accent-primary)' }} />
+            <span>{game.weight}</span>
+          </div>
         )}
-        {game.category && (
-          <span className="badge badge-category" style={{ maxWidth: '100px' }}>
-            {game.category.split(',')[0].trim()}
-          </span>
+
+        {game.rating && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)', width: '50px' }}>
+            <Star size={14} fill="#f59e0b" stroke="#f59e0b" />
+            <span style={{ fontWeight: '700' }}>{game.rating}</span>
+          </div>
         )}
+      </div>
+
+      {/* Weight Badge */}
+      <div style={{ marginLeft: '12px', minWidth: '40px', display: 'flex', justifyContent: 'flex-end' }}>
+        {game.weight && <span className="badge badge-weight">W {game.weight}</span>}
       </div>
     </div>
   );

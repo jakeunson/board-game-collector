@@ -1,50 +1,47 @@
 import React from 'react';
 import { Users, Clock, Star } from 'lucide-react';
 
-// Generate a consistent pastel color from a string
-function nameToColor(name = '') {
+function nameToGradient(name = '') {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const hue = Math.abs(hash) % 360;
-  return {
-    bg: `hsl(${hue}, 40%, 80%)`,
-    text: `hsl(${hue}, 40%, 25%)`,
-  };
+  const h1 = Math.abs(hash) % 360;
+  const h2 = (h1 + 40) % 360;
+  return `linear-gradient(135deg, hsl(${h1}, 45%, 65%), hsl(${h2}, 45%, 55%))`;
 }
 
 function GameCard({ game, onClick }) {
   const initial = game.name ? game.name.charAt(0) : '?';
-  const colors = nameToColor(game.name);
   const [imgError, setImgError] = React.useState(false);
   const showImage = game.image && !imgError;
+  const gradient = nameToGradient(game.name);
 
   return (
     <div
       onClick={onClick}
+      className="glass"
       style={{
-        background: '#fff',
-        borderRadius: '12px',
+        borderRadius: '20px',
         overflow: 'hidden',
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
-        border: '1px solid var(--border-subtle)',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-        transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
+        e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+        e.currentTarget.style.boxShadow = 'var(--shadow-xl), 0 0 20px var(--accent-glow)';
+        e.currentTarget.style.borderColor = 'var(--accent-primary)';
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)';
+        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+        e.currentTarget.style.borderColor = 'var(--border-subtle)';
       }}
     >
       {/* Image / Placeholder */}
-      <div style={{ position: 'relative', height: '180px', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
         {showImage ? (
           <>
             <img
@@ -56,69 +53,63 @@ function GameCard({ game, onClick }) {
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
-                transition: 'transform 0.3s ease',
+                transition: 'transform 0.6s ease',
               }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
             />
-            {/* Gradient overlay */}
             <div style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.72) 100%)',
+              background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.8) 100%)',
               pointerEvents: 'none',
             }} />
-            {/* Name overlay on image */}
             <div style={{
               position: 'absolute',
               bottom: 0,
               left: 0,
               right: 0,
-              padding: '10px 12px',
+              padding: '16px',
             }}>
               <h3 style={{
-                fontSize: '14px',
+                fontSize: '16px',
                 fontWeight: '700',
-                color: '#fff',
-                lineHeight: '1.35',
+                color: '#ffffff',
+                lineHeight: '1.3',
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden',
-                textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+                textShadow: '0 2px 4px rgba(0,0,0,0.5)',
               }}>
                 {game.name}
               </h3>
             </div>
           </>
         ) : (
-          /* Initial Placeholder */
           <div style={{
             width: '100%',
             height: '100%',
-            background: colors.bg,
+            background: gradient,
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px',
           }}>
-            <span style={{ fontSize: '48px', fontWeight: '800', color: colors.text, lineHeight: 1 }}>
+            <span style={{ fontSize: '64px', fontWeight: '900', color: '#ffffff', opacity: 0.9 }}>
               {initial}
             </span>
           </div>
         )}
       </div>
 
-      {/* Info section (always shown, smaller when image is present) */}
-      <div style={{ padding: '10px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {/* Name (only when no image) */}
+      {/* Info Section */}
+      <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {!showImage && (
           <h3 style={{
-            fontSize: '14px',
-            fontWeight: '600',
+            fontSize: '16px',
+            fontWeight: '700',
             color: 'var(--text-primary)',
-            lineHeight: '1.35',
+            lineHeight: '1.3',
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
@@ -128,30 +119,32 @@ function GameCard({ game, onClick }) {
           </h3>
         )}
 
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: '10px', color: 'var(--text-secondary)', fontSize: '12px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '12px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '500' }}>
           {game.maxPlayers && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <Users size={11} />
-              {game.minPlayers && game.minPlayers !== game.maxPlayers ? `${game.minPlayers}–` : ''}{game.maxPlayers}인
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Users size={14} className="text-accent" style={{ color: 'var(--accent-primary)' }} />
+              {game.minPlayers && game.minPlayers !== game.maxPlayers ? `${game.minPlayers}-` : ''}{game.maxPlayers}인
             </span>
           )}
           {game.playingTime && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <Clock size={11} /> {game.playingTime}분
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Clock size={14} className="text-accent" style={{ color: 'var(--accent-primary)' }} />
+              {game.playingTime}분
             </span>
           )}
           {game.rating && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <Star size={11} style={{ color: '#f59e0b' }} /> {game.rating}
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Star size={14} fill="#f59e0b" stroke="#f59e0b" />
+              {game.rating}
             </span>
           )}
         </div>
 
-        {/* Badges */}
-        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: 'auto', paddingTop: '2px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: 'auto' }}>
           {game.weight && (
-            <span className="badge badge-weight">W {game.weight}</span>
+            <span className="badge badge-weight">
+              W {parseFloat(game.weight).toFixed(1)}
+            </span>
           )}
           {game.category && (
             <span className="badge badge-category">
