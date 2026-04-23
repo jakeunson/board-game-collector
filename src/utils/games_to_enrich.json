@@ -1,0 +1,838 @@
+[
+  {
+    "docId": "7-wonders-duel",
+    "name": "세븐 원더스 대결",
+    "boardlifeId": "5222"
+  },
+  {
+    "docId": "bl_1",
+    "name": "푸에르토 리코",
+    "boardlifeId": "1"
+  },
+  {
+    "docId": "bl_10",
+    "name": "안드로이드: 넷러너",
+    "boardlifeId": "10"
+  },
+  {
+    "docId": "bl_10027",
+    "name": "사건의 재구성: 레드뷰에 오신 걸 환영합니다",
+    "boardlifeId": "10027"
+  },
+  {
+    "docId": "bl_10028",
+    "name": "사건의 재구성: 느와르",
+    "boardlifeId": "10028"
+  },
+  {
+    "docId": "bl_10039",
+    "name": "디텍티브: 모던 크라임",
+    "boardlifeId": "10039"
+  },
+  {
+    "docId": "bl_1018",
+    "name": "7 원더스: 시티즈",
+    "boardlifeId": "1018"
+  },
+  {
+    "docId": "bl_1037",
+    "name": "포비든 아일랜드",
+    "boardlifeId": "1037"
+  },
+  {
+    "docId": "bl_1039",
+    "name": "와사비!",
+    "boardlifeId": "1039"
+  },
+  {
+    "docId": "bl_10444",
+    "name": "아컴 호러: 카드 게임 – 돌아온 광신도의 밤",
+    "boardlifeId": "10444"
+  },
+  {
+    "docId": "bl_10909",
+    "name": "아컴 호러: 카드 게임 - 심연의 수호자",
+    "boardlifeId": "10909"
+  },
+  {
+    "docId": "bl_11026",
+    "name": "아컴 호러: 카드 게임 – 잊힌 시대",
+    "boardlifeId": "11026"
+  },
+  {
+    "docId": "bl_11154",
+    "name": "아컴 호러: 카드게임 - 돌아온 던위치의 유산",
+    "boardlifeId": "11154"
+  },
+  {
+    "docId": "bl_11488",
+    "name": "언락! 4",
+    "boardlifeId": "11488"
+  },
+  {
+    "docId": "bl_11711",
+    "name": "아컴 호러: 카드 게임 - 엑셀시어 호텔 살인사건",
+    "boardlifeId": "11711"
+  },
+  {
+    "docId": "bl_11776",
+    "name": "아컴 호러: 카드 게임 – 돌아온 던위치의 유산",
+    "boardlifeId": "11776"
+  },
+  {
+    "docId": "bl_118",
+    "name": "고스트 스토리즈",
+    "boardlifeId": "118"
+  },
+  {
+    "docId": "bl_12",
+    "name": "티켓 투 라이드",
+    "boardlifeId": "12"
+  },
+  {
+    "docId": "bl_12316",
+    "name": "언락! 5",
+    "boardlifeId": "12316"
+  },
+  {
+    "docId": "bl_12626",
+    "name": "언락! 6",
+    "boardlifeId": "12626"
+  },
+  {
+    "docId": "bl_127",
+    "name": "도미니언",
+    "boardlifeId": "127"
+  },
+  {
+    "docId": "bl_128",
+    "name": "도미니언: 장막 뒤의 사람들",
+    "boardlifeId": "128"
+  },
+  {
+    "docId": "bl_12900",
+    "name": "글룸헤이븐: 사자의 턱",
+    "boardlifeId": "12900"
+  },
+  {
+    "docId": "bl_1307",
+    "name": "파워 그리드: 확장 - 로봇",
+    "boardlifeId": "1307"
+  },
+  {
+    "docId": "bl_1311",
+    "name": "고스트 스토리즈: 검은 비밀",
+    "boardlifeId": "1311"
+  },
+  {
+    "docId": "bl_1319",
+    "name": "석기시대: 확장",
+    "boardlifeId": "1319"
+  },
+  {
+    "docId": "bl_13242",
+    "name": "디텍티브: 모던 크라임 - 시즌 1",
+    "boardlifeId": "13242"
+  },
+  {
+    "docId": "bl_1340",
+    "name": "쿼리도 (Quoridor)",
+    "boardlifeId": "1340",
+    "bggId": "624"
+  },
+  {
+    "docId": "bl_13426",
+    "name": "스페이스 크루",
+    "boardlifeId": "13426"
+  },
+  {
+    "docId": "bl_135",
+    "name": "카르카손",
+    "boardlifeId": "135",
+    "bggId": "822"
+  },
+  {
+    "docId": "bl_136",
+    "name": "카르카손: 확장 1 - 여관과 대성당",
+    "boardlifeId": "136"
+  },
+  {
+    "docId": "bl_137",
+    "name": "카르카손: 확장 2 - 상인과 건축가",
+    "boardlifeId": "137"
+  },
+  {
+    "docId": "bl_13726",
+    "name": "보드게임 카페 라떼",
+    "boardlifeId": "13726"
+  },
+  {
+    "docId": "bl_138",
+    "name": "카르카손: 확장 3 - 공주와 용",
+    "boardlifeId": "138"
+  },
+  {
+    "docId": "bl_13807",
+    "name": "캔버스",
+    "boardlifeId": "13807"
+  },
+  {
+    "docId": "bl_13866",
+    "name": "어사일럼 이스케이프",
+    "boardlifeId": "13866"
+  },
+  {
+    "docId": "bl_1391",
+    "name": "어센션: 신들의 귀환",
+    "boardlifeId": "1391"
+  },
+  {
+    "docId": "bl_1397",
+    "name": "포뮬라 D: 서킷 1",
+    "boardlifeId": "1397"
+  },
+  {
+    "docId": "bl_140",
+    "name": "카르카손: 확장 6 - 왕과 정찰병",
+    "boardlifeId": "140"
+  },
+  {
+    "docId": "bl_14035",
+    "name": "언락 3",
+    "boardlifeId": "14035"
+  },
+  {
+    "docId": "bl_14036",
+    "name": "언락 2",
+    "boardlifeId": "14036"
+  },
+  {
+    "docId": "bl_1421",
+    "name": "고스트 스토리즈: 하얀달",
+    "boardlifeId": "1421"
+  },
+  {
+    "docId": "bl_1422",
+    "name": "펠리시티: 자루 속 고양이",
+    "boardlifeId": "1422"
+  },
+  {
+    "docId": "bl_14261",
+    "name": "방 탈출 D: 숲속의 오두막",
+    "boardlifeId": "14261"
+  },
+  {
+    "docId": "bl_14262",
+    "name": "방 탈출 D: 유령 기차",
+    "boardlifeId": "14262"
+  },
+  {
+    "docId": "bl_14263",
+    "name": "방 탈출 D: 고대 문명",
+    "boardlifeId": "14263"
+  },
+  {
+    "docId": "bl_14264",
+    "name": "방 탈출 D: 보물섬",
+    "boardlifeId": "14264"
+  },
+  {
+    "docId": "bl_14397",
+    "name": "언락 4",
+    "boardlifeId": "14397"
+  },
+  {
+    "docId": "bl_1445",
+    "name": "선더스톤: 파멸의 전조",
+    "boardlifeId": "1445"
+  },
+  {
+    "docId": "bl_14523",
+    "name": "서스펙트 게임: 리로드",
+    "boardlifeId": "14523"
+  },
+  {
+    "docId": "bl_14526",
+    "name": "서스펙트 게임: 클로즈드 서클 미스터리",
+    "boardlifeId": "14526"
+  },
+  {
+    "docId": "bl_1456",
+    "name": "시즌스: 마법에 걸린 왕국",
+    "boardlifeId": "1456"
+  },
+  {
+    "docId": "bl_1461",
+    "name": "카르카손: 확장 4 - 타워",
+    "boardlifeId": "1461"
+  },
+  {
+    "docId": "bl_1490",
+    "name": "카르카손: 확장 5 - 수도원과 성주",
+    "boardlifeId": "1490"
+  },
+  {
+    "docId": "bl_1500",
+    "name": "카르카손: 확장 8 - 다리와 성바자르",
+    "boardlifeId": "1500"
+  },
+  {
+    "docId": "bl_1513",
+    "name": "레지스탕스: 아발론",
+    "boardlifeId": "1513"
+  },
+  {
+    "docId": "bl_1522",
+    "name": "포뮬라 D: 서킷 2",
+    "boardlifeId": "1522"
+  },
+  {
+    "docId": "bl_15251",
+    "name": "캔버스: 리플렉션",
+    "boardlifeId": "15251"
+  },
+  {
+    "docId": "bl_154",
+    "name": "젠가",
+    "boardlifeId": "154"
+  },
+  {
+    "docId": "bl_1623",
+    "name": "왕좌의 게임 HBO",
+    "boardlifeId": "1623"
+  },
+  {
+    "docId": "bl_16305",
+    "name": "아컴 호러: 카드 게임 - 시간을 초월한 음모",
+    "boardlifeId": "16305"
+  },
+  {
+    "docId": "bl_1654",
+    "name": "상트 페테르부르크: 새로운 사회와 향연",
+    "boardlifeId": "1654"
+  },
+  {
+    "docId": "bl_1656",
+    "name": "어센션: 폭풍의 서막",
+    "boardlifeId": "1656"
+  },
+  {
+    "docId": "bl_1664",
+    "name": "선더스톤: 용의 첨탑",
+    "boardlifeId": "1664"
+  },
+  {
+    "docId": "bl_17",
+    "name": "파워 그리드",
+    "boardlifeId": "17"
+  },
+  {
+    "docId": "bl_1727",
+    "name": "클루",
+    "boardlifeId": "1727"
+  },
+  {
+    "docId": "bl_1729",
+    "name": "클루: 해리포터",
+    "boardlifeId": "1729"
+  },
+  {
+    "docId": "bl_1749",
+    "name": "스몰 월드: 설화와 전설",
+    "boardlifeId": "1749"
+  },
+  {
+    "docId": "bl_1813",
+    "name": "스몰 월드: 귀부인",
+    "boardlifeId": "1813"
+  },
+  {
+    "docId": "bl_182",
+    "name": "서바이브: 아틀란티스 섬으로부터의 탈출!",
+    "boardlifeId": "182"
+  },
+  {
+    "docId": "bl_1827",
+    "name": "서바이브: 아틀란티스 섬으로부터의 탈출! - 거대 오징어 미니 확장",
+    "boardlifeId": "1827"
+  },
+  {
+    "docId": "bl_1829",
+    "name": "서바이브: 아틀란티스로부터의 탈출! 5-6인용 미니 확장",
+    "boardlifeId": "1829"
+  },
+  {
+    "docId": "bl_183",
+    "name": "아그리콜라",
+    "boardlifeId": "183"
+  },
+  {
+    "docId": "bl_1830",
+    "name": "서바이브: 아틀란티스 섬으로부터의 탈출! - 돌고래와 다이브 다이스 미니 확장",
+    "boardlifeId": "1830"
+  },
+  {
+    "docId": "bl_185",
+    "name": "스몰 월드 언더그라운드",
+    "boardlifeId": "185"
+  },
+  {
+    "docId": "bl_187",
+    "name": "스몰 월드",
+    "boardlifeId": "187"
+  },
+  {
+    "docId": "bl_1900",
+    "name": "8분 제국",
+    "boardlifeId": "1900"
+  },
+  {
+    "docId": "bl_1916",
+    "name": "포뮬라 D: 서킷 3",
+    "boardlifeId": "1916"
+  },
+  {
+    "docId": "bl_1933",
+    "name": "룸 25",
+    "boardlifeId": "1933"
+  },
+  {
+    "docId": "bl_2012",
+    "name": "티켓 투 라이드: USA 1910",
+    "boardlifeId": "2012"
+  },
+  {
+    "docId": "bl_2017",
+    "name": "브뤼헤",
+    "boardlifeId": "2017"
+  },
+  {
+    "docId": "bl_2020",
+    "name": "히어로 디텍티드",
+    "boardlifeId": "2020"
+  },
+  {
+    "docId": "bl_2034",
+    "name": "우노",
+    "boardlifeId": "2034"
+  },
+  {
+    "docId": "bl_2041",
+    "name": "나이트폴: 계엄령",
+    "boardlifeId": "2041"
+  },
+  {
+    "docId": "bl_2042",
+    "name": "나이트폴: 블러드 인 더 선",
+    "boardlifeId": "2042"
+  },
+  {
+    "docId": "bl_2049",
+    "name": "도미니언: 길드를 위하여",
+    "boardlifeId": "2049"
+  },
+  {
+    "docId": "bl_2061",
+    "name": "루미큐브 (Rummikub)",
+    "boardlifeId": "2061",
+    "bggId": "811"
+  },
+  {
+    "docId": "bl_2083",
+    "name": "스플렌더",
+    "boardlifeId": "2083"
+  },
+  {
+    "docId": "bl_2091",
+    "name": "잠보 확장",
+    "boardlifeId": "2091"
+  },
+  {
+    "docId": "bl_211",
+    "name": "잠보",
+    "boardlifeId": "211"
+  },
+  {
+    "docId": "bl_2118",
+    "name": "고려",
+    "boardlifeId": "2118"
+  },
+  {
+    "docId": "bl_2119",
+    "name": "패치스토리",
+    "boardlifeId": "2119"
+  },
+  {
+    "docId": "bl_2139",
+    "name": "로스트 레거시",
+    "boardlifeId": "2139"
+  },
+  {
+    "docId": "bl_214",
+    "name": "석기시대",
+    "boardlifeId": "214",
+    "bggId": "34635"
+  },
+  {
+    "docId": "bl_2145",
+    "name": "할리갈리 (Halli Galli)",
+    "boardlifeId": "2145",
+    "bggId": "1127"
+  },
+  {
+    "docId": "bl_2146",
+    "name": "안드로이드 : 넷러너 - 창조와 통제",
+    "boardlifeId": "2146"
+  },
+  {
+    "docId": "bl_217",
+    "name": "팬데믹: 벼랑 끝에서",
+    "boardlifeId": "217"
+  },
+  {
+    "docId": "bl_22",
+    "name": "할리갈리",
+    "boardlifeId": "22"
+  },
+  {
+    "docId": "bl_252",
+    "name": "선더스톤",
+    "boardlifeId": "252"
+  },
+  {
+    "docId": "bl_2578",
+    "name": "젠가 (Jenga)",
+    "boardlifeId": "2578",
+    "bggId": "2452"
+  },
+  {
+    "docId": "bl_2634",
+    "name": "파워 그리드: 새로운 발전소 카드",
+    "boardlifeId": "2634"
+  },
+  {
+    "docId": "bl_269",
+    "name": "위대한 로마",
+    "boardlifeId": "269"
+  },
+  {
+    "docId": "bl_274",
+    "name": "카탄의 개척자",
+    "boardlifeId": "274"
+  },
+  {
+    "docId": "bl_275",
+    "name": "카탄: 항해사",
+    "boardlifeId": "275"
+  },
+  {
+    "docId": "bl_276",
+    "name": "카탄: 도시와 기사",
+    "boardlifeId": "276"
+  },
+  {
+    "docId": "bl_2776",
+    "name": "다빈치 코드 (Da Vinci Code)",
+    "boardlifeId": "2776",
+    "bggId": "6320"
+  },
+  {
+    "docId": "bl_279",
+    "name": "도미니언: 바다",
+    "boardlifeId": "279"
+  },
+  {
+    "docId": "bl_285",
+    "name": "타케노코",
+    "boardlifeId": "285"
+  },
+  {
+    "docId": "bl_304",
+    "name": "쿼리도",
+    "boardlifeId": "304"
+  },
+  {
+    "docId": "bl_313",
+    "name": "어센션",
+    "boardlifeId": "313"
+  },
+  {
+    "docId": "bl_348",
+    "name": "나이트폴",
+    "boardlifeId": "348"
+  },
+  {
+    "docId": "bl_364",
+    "name": "다빈치 코드",
+    "boardlifeId": "364"
+  },
+  {
+    "docId": "bl_366",
+    "name": "와이어트 어프",
+    "boardlifeId": "366"
+  },
+  {
+    "docId": "bl_38",
+    "name": "루미큐브",
+    "boardlifeId": "38"
+  },
+  {
+    "docId": "bl_380",
+    "name": "7 원더스: 리더스",
+    "boardlifeId": "380"
+  },
+  {
+    "docId": "bl_386",
+    "name": "이봐, 그건 내 물고기야!",
+    "boardlifeId": "386"
+  },
+  {
+    "docId": "bl_389",
+    "name": "포뮬라 D",
+    "boardlifeId": "389"
+  },
+  {
+    "docId": "bl_416",
+    "name": "상트페테르부르크",
+    "boardlifeId": "416"
+  },
+  {
+    "docId": "bl_421",
+    "name": "버건디의 성",
+    "boardlifeId": "421"
+  },
+  {
+    "docId": "bl_423",
+    "name": "화이트채플에서 온 편지",
+    "boardlifeId": "423"
+  },
+  {
+    "docId": "bl_43",
+    "name": "티켓 투 라이드: 유럽",
+    "boardlifeId": "43"
+  },
+  {
+    "docId": "bl_462",
+    "name": "스노우 테일즈",
+    "boardlifeId": "462"
+  },
+  {
+    "docId": "bl_47",
+    "name": "보난자",
+    "boardlifeId": "47"
+  },
+  {
+    "docId": "bl_478",
+    "name": "티츄",
+    "boardlifeId": "478"
+  },
+  {
+    "docId": "bl_488",
+    "name": "플래시 포인트: 화재 구조",
+    "boardlifeId": "488"
+  },
+  {
+    "docId": "bl_505",
+    "name": "마지막 유언",
+    "boardlifeId": "505"
+  },
+  {
+    "docId": "bl_512",
+    "name": "도미니언: 번영",
+    "boardlifeId": "512"
+  },
+  {
+    "docId": "bl_5222",
+    "name": "7 원더스: 대결",
+    "boardlifeId": "5222"
+  },
+  {
+    "docId": "bl_535",
+    "name": "보난자 (Bohnanza)",
+    "boardlifeId": "535",
+    "bggId": "11"
+  },
+  {
+    "docId": "bl_559",
+    "name": "로스트 시티",
+    "boardlifeId": "559",
+    "bggId": "50"
+  },
+  {
+    "docId": "bl_565",
+    "name": "빌리지",
+    "boardlifeId": "565"
+  },
+  {
+    "docId": "bl_593",
+    "name": "쿼런틴",
+    "boardlifeId": "593"
+  },
+  {
+    "docId": "bl_594",
+    "name": "포뮬라 D: 서킷 4",
+    "boardlifeId": "594"
+  },
+  {
+    "docId": "bl_613",
+    "name": "안드로이드: 넷러너 - 인성의 그늘",
+    "boardlifeId": "613"
+  },
+  {
+    "docId": "bl_616",
+    "name": "도미니언: 암흑의 시대",
+    "boardlifeId": "616"
+  },
+  {
+    "docId": "bl_626",
+    "name": "비바자바 : 커피 게임",
+    "boardlifeId": "626"
+  },
+  {
+    "docId": "bl_629",
+    "name": "7 원더스 : 원더팩",
+    "boardlifeId": "629"
+  },
+  {
+    "docId": "bl_659",
+    "name": "이스케이프: 사원의 저주",
+    "boardlifeId": "659"
+  },
+  {
+    "docId": "bl_666",
+    "name": "라 보카",
+    "boardlifeId": "666"
+  },
+  {
+    "docId": "bl_682",
+    "name": "라스베가스",
+    "boardlifeId": "682"
+  },
+  {
+    "docId": "bl_706",
+    "name": "안드로이드: 넷러너 - 사이버 엑소더스",
+    "boardlifeId": "706"
+  },
+  {
+    "docId": "bl_7312",
+    "name": "좀비 사이드: 흑사병",
+    "boardlifeId": "7312"
+  },
+  {
+    "docId": "bl_745",
+    "name": "홈스트레치",
+    "boardlifeId": "745"
+  },
+  {
+    "docId": "bl_749",
+    "name": "안드로이드: 넷러너 - 쌓여진 단서들",
+    "boardlifeId": "749"
+  },
+  {
+    "docId": "bl_77",
+    "name": "촐킨: 마야의 달력",
+    "boardlifeId": "77"
+  },
+  {
+    "docId": "bl_78",
+    "name": "테라 미스티카",
+    "boardlifeId": "78"
+  },
+  {
+    "docId": "bl_7816",
+    "name": "아컴 호러: 카드 게임 – 던위치의 유산",
+    "boardlifeId": "7816"
+  },
+  {
+    "docId": "bl_786",
+    "name": "안드로이드: 넷러너 - 미래 경쟁력",
+    "boardlifeId": "786"
+  },
+  {
+    "docId": "bl_7929",
+    "name": "언락 1",
+    "boardlifeId": "7929"
+  },
+  {
+    "docId": "bl_81",
+    "name": "러브 레터",
+    "boardlifeId": "81",
+    "bggId": "129622"
+  },
+  {
+    "docId": "bl_812",
+    "name": "왕좌의 게임 (2판)",
+    "boardlifeId": "812"
+  },
+  {
+    "docId": "bl_813",
+    "name": "안드로이드: 넷러너 - 다가오는 무언가",
+    "boardlifeId": "813"
+  },
+  {
+    "docId": "bl_8161",
+    "name": "언락!",
+    "boardlifeId": "8161"
+  },
+  {
+    "docId": "bl_84",
+    "name": "팬데믹",
+    "boardlifeId": "84"
+  },
+  {
+    "docId": "bl_8997",
+    "name": "언락! 2",
+    "boardlifeId": "8997"
+  },
+  {
+    "docId": "bl_90",
+    "name": "푸에르토 리코 (Puerto Rico)",
+    "boardlifeId": "90",
+    "bggId": "3076"
+  },
+  {
+    "docId": "bl_91",
+    "name": "시즌스",
+    "boardlifeId": "91"
+  },
+  {
+    "docId": "bl_9352",
+    "name": "사건의 재구성",
+    "boardlifeId": "9352"
+  },
+  {
+    "docId": "bl_94",
+    "name": "7 원더스",
+    "boardlifeId": "94"
+  },
+  {
+    "docId": "bl_9559",
+    "name": "아컴 호러: 카드 게임 - 광기의 미궁",
+    "boardlifeId": "9559"
+  },
+  {
+    "docId": "bl_9937",
+    "name": "아컴 호러: 카드 게임 – 카르코사로 가는 길",
+    "boardlifeId": "9937"
+  },
+  {
+    "docId": "bl_9997",
+    "name": "언락! 3",
+    "boardlifeId": "9997"
+  },
+  {
+    "docId": "crime-hotel",
+    "name": "크라임 호텔",
+    "boardlifeId": "10459"
+  },
+  {
+    "docId": "pandemic-legacy-s0",
+    "name": "팬데믹 레거시 시즌 0",
+    "boardlifeId": "13425"
+  },
+  {
+    "docId": "the-crew-9th-planet",
+    "name": "스페이스 크루: 9번째 행성을 찾아서",
+    "boardlifeId": "13426"
+  }
+]

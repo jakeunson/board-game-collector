@@ -1,62 +1,163 @@
 import React from 'react';
-import { Users, Clock, Star, Trash2 } from 'lucide-react';
+import { Users, Clock, Star } from 'lucide-react';
 
-function GameCard({ game, onDelete, onClick }) {
+// Generate a consistent pastel color from a string
+function nameToColor(name = '') {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  return {
+    bg: `hsl(${hue}, 40%, 80%)`,
+    text: `hsl(${hue}, 40%, 25%)`,
+  };
+}
+
+function GameCard({ game, onClick }) {
+  const initial = game.name ? game.name.charAt(0) : '?';
+  const colors = nameToColor(game.name);
+  const [imgError, setImgError] = React.useState(false);
+  const showImage = game.image && !imgError;
+
   return (
-    <div 
-      className="glass-card animate-slide-up" 
+    <div
       onClick={onClick}
-      style={{ 
-        overflow: 'hidden', 
-        position: 'relative', 
+      style={{
+        background: '#fff',
+        borderRadius: '12px',
+        overflow: 'hidden',
         cursor: 'pointer',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+        transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)';
       }}
     >
-      <div style={{ height: '160px', overflow: 'hidden', position: 'relative' }}>
-        <img 
-          src={game.image} 
-          alt={game.name} 
-          referrerPolicy="no-referrer"
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
+      {/* Image / Placeholder */}
+      <div style={{ position: 'relative', height: '180px', overflow: 'hidden', flexShrink: 0 }}>
+        {showImage ? (
+          <>
+            <img
+              src={game.image}
+              alt={game.name}
+              referrerPolicy="no-referrer"
+              onError={() => setImgError(true)}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                transition: 'transform 0.3s ease',
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            />
+            {/* Gradient overlay */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.72) 100%)',
+              pointerEvents: 'none',
+            }} />
+            {/* Name overlay on image */}
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              padding: '10px 12px',
+            }}>
+              <h3 style={{
+                fontSize: '14px',
+                fontWeight: '700',
+                color: '#fff',
+                lineHeight: '1.35',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+              }}>
+                {game.name}
+              </h3>
+            </div>
+          </>
+        ) : (
+          /* Initial Placeholder */
+          <div style={{
+            width: '100%',
+            height: '100%',
+            background: colors.bg,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}>
+            <span style={{ fontSize: '48px', fontWeight: '800', color: colors.text, lineHeight: 1 }}>
+              {initial}
+            </span>
+          </div>
+        )}
       </div>
 
-      <div style={{ padding: '12px' }}>
-        <h3 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>{game.name}</h3>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Users size={12} />
-            <span>{game.maxPlayers}인</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Clock size={12} />
-            <span>{game.playingTime}분</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Star size={12} style={{ color: '#fbbf24' }} />
-            <span>{game.rating}</span>
-          </div>
+      {/* Info section (always shown, smaller when image is present) */}
+      <div style={{ padding: '10px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {/* Name (only when no image) */}
+        {!showImage && (
+          <h3 style={{
+            fontSize: '14px',
+            fontWeight: '600',
+            color: 'var(--text-primary)',
+            lineHeight: '1.35',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}>
+            {game.name}
+          </h3>
+        )}
+
+        {/* Stats */}
+        <div style={{ display: 'flex', gap: '10px', color: 'var(--text-secondary)', fontSize: '12px', flexWrap: 'wrap' }}>
+          {game.maxPlayers && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <Users size={11} />
+              {game.minPlayers && game.minPlayers !== game.maxPlayers ? `${game.minPlayers}–` : ''}{game.maxPlayers}인
+            </span>
+          )}
+          {game.playingTime && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <Clock size={11} /> {game.playingTime}분
+            </span>
+          )}
+          {game.rating && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <Star size={11} style={{ color: '#f59e0b' }} /> {game.rating}
+            </span>
+          )}
         </div>
 
-        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
-          <button 
-            onClick={onDelete}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: '#d1d1d1', 
-              cursor: 'pointer',
-              padding: '4px',
-              transition: 'color 0.2s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.color = '#ef4444'}
-            onMouseOut={(e) => e.currentTarget.style.color = '#d1d1d1'}
-          >
-            <Trash2 size={16} />
-          </button>
+        {/* Badges */}
+        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: 'auto', paddingTop: '2px' }}>
+          {game.weight && (
+            <span className="badge badge-weight">W {game.weight}</span>
+          )}
+          {game.category && (
+            <span className="badge badge-category">
+              {game.category.split(',')[0].trim()}
+            </span>
+          )}
         </div>
       </div>
     </div>

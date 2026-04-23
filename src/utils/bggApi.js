@@ -51,9 +51,19 @@ export async function getGameDetails(id) {
     };
 
     const getStat = (tagName) => item.getElementsByTagName(tagName)[0]?.getAttribute('value');
+    const getLinks = (type) => {
+      const links = item.getElementsByTagName('link');
+      const results = [];
+      for (let i = 0; i < links.length; i++) {
+        if (links[i].getAttribute('type') === type) {
+          results.push(links[i].getAttribute('value'));
+        }
+      }
+      return results.join(', ');
+    };
     
     return {
-      id: item.getAttribute('id'),
+      bggId: item.getAttribute('id'),
       name: getName(),
       image: item.getElementsByTagName('image')[0]?.textContent,
       thumbnail: item.getElementsByTagName('thumbnail')[0]?.textContent,
@@ -62,8 +72,11 @@ export async function getGameDetails(id) {
       minPlayers: getStat('minplayers'),
       maxPlayers: getStat('maxplayers'),
       playingTime: getStat('playingtime'),
-      rating: item.getElementsByTagName('average')[0]?.getAttribute('value'),
-      weight: item.getElementsByTagName('averageweight')[0]?.getAttribute('value'),
+      rating: parseFloat(item.getElementsByTagName('average')[0]?.getAttribute('value') || 0).toFixed(1),
+      weight: parseFloat(item.getElementsByTagName('averageweight')[0]?.getAttribute('value') || 0).toFixed(1),
+      category: getLinks('boardgamecategory'),
+      mechanics: getLinks('boardgamemechanic'),
+      theme: getLinks('boardgametheme') || getLinks('boardgamefamily'),
     };
   } catch (error) {
     console.error('BGG Detail Error:', error);

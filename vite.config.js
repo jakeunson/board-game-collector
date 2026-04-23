@@ -20,6 +20,12 @@ export default defineConfig(({ mode }) => {
               }
             });
           },
+        },
+        '/boardlife': {
+          target: 'https://boardlife.co.kr',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/boardlife/, ''),
         }
       }
     }
