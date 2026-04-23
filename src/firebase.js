@@ -3,7 +3,7 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDMtnw__VjeaWM9UOxGzV12qdwdrfmzb10",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "boardgame-collector.firebaseapp.com",
   projectId: "boardgame-collector",
   storageBucket: "boardgame-collector.firebasestorage.app",
