@@ -113,6 +113,16 @@ function App() {
     }
   };
 
+  const updateGame = async (id, data) => {
+    try {
+      const { updateDoc } = await import("firebase/firestore");
+      await updateDoc(doc(db, "games", id), data);
+      // Local state is updated automatically via onSnapshot
+    } catch (error) {
+      console.error("Error updating game:", error);
+    }
+  };
+
   const allCategories = Array.from(new Set(
     gameCollection.flatMap(g => g.category ? g.category.split(',').map(c => c.trim()) : [])
   )).sort();
@@ -380,7 +390,7 @@ function App() {
         document.body
       )}
       {selectedGame && createPortal(
-        <GameDetail game={selectedGame} onClose={() => setSelectedGame(null)} onDelete={removeGame} />,
+        <GameDetail game={selectedGame} onClose={() => setSelectedGame(null)} onDelete={removeGame} onUpdate={updateGame} />,
         document.body
       )}
     </div>

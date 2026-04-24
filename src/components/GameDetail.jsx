@@ -1,5 +1,7 @@
-import React from 'react';
-import { Users, Clock, Star, Brain, X, Trash2, ExternalLink, Video, Search, Globe, Calendar, Layers, Puzzle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Users, Clock, Star, Brain, X, Trash2, ExternalLink, Video, Search, Globe, Calendar, Layers, Puzzle, Camera, Loader2 } from 'lucide-react';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase';
 
 function StatCard({ icon, label, value, color }) {
   if (value === undefined || value === null || value === '') return null;
@@ -61,8 +63,47 @@ function TagList({ items, icon, label }) {
   );
 }
 
-function GameDetail({ game, onClose, onDelete }) {
+function GameDetail({ game, onClose, onDelete, onUpdate }) {
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
   if (!game) return null;
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 업로드 가능합니다.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('파일 크기는 5MB 이하여야 합니다.');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const storageRef = ref(storage, `games/${game.id}/${Date.now()}_${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      await onUpdate(game.id, { 
+        image: downloadURL,
+        thumbnail: downloadURL // For simplicity, update both
+      });
+      
+      alert('이미지가 성공적으로 업데이트되었습니다.');
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('이미지 업로드 중 오류가 발생했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const players = game.minPlayers && game.maxPlayers
     ? game.minPlayers === game.maxPlayers ? `${game.maxPlayers}인` : `${game.minPlayers}–${game.maxPlayers}인`
@@ -104,9 +145,22 @@ function GameDetail({ game, onClose, onDelete }) {
           padding: '16px 24px', display: 'flex', justifyContent: 'space-between', 
           alignItems: 'center', borderBottom: '1px solid var(--border-subtle)'
         }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Game Details
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Game Details
+            </span>
+            <span style={{ 
+              fontSize: '11px', 
+              background: 'var(--bg-app)', 
+              padding: '2px 8px', 
+              borderRadius: '6px', 
+              color: 'var(--accent-primary)',
+              fontWeight: '700',
+              border: '1px solid var(--border-subtle)'
+            }}>
+              ID: {game.boardlifeId || game.id}
+            </span>
+          </div>
           <button 
             onClick={onClose} 
             style={{ 
@@ -125,19 +179,63 @@ function GameDetail({ game, onClose, onDelete }) {
             
             {/* Left Column: Image + Stats */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ 
-                width: '100%', 
-                borderRadius: '20px', 
-                overflow: 'hidden', 
-                boxShadow: 'var(--shadow-lg)',
-                border: '1px solid var(--border-subtle)',
-                background: 'var(--bg-app)'
-              }}>
+              <div 
+                className="image-container"
+                style={{ 
+                  position: 'relative',
+                  width: '100%', 
+                  borderRadius: '20px', 
+                  overflow: 'hidden', 
+                  boxShadow: 'var(--shadow-lg)',
+                  border: '1px solid var(--border-subtle)',
+                  background: 'var(--bg-app)'
+                }}
+              >
                 <img
                   src={game.image}
                   alt={game.name}
                   referrerPolicy="no-referrer"
-                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                  style={{ 
+                    width: '100%', 
+                    height: 'auto', 
+                    display: 'block',
+                    opacity: isUploading ? 0.5 : 1,
+                    transition: 'opacity 0.3s'
+                  }}
+                />
+                
+                {/* Upload Overlay */}
+                <div 
+                  className="image-upload-overlay"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: isUploading ? 'default' : 'pointer',
+                  }}
+                  onClick={() => !isUploading && fileInputRef.current?.click()}
+                >
+                  {isUploading ? (
+                    <div style={{ textAlign: 'center', color: '#fff', opacity: 1 }}>
+                      <Loader2 size={32} className="animate-spin" />
+                      <p style={{ fontSize: '12px', marginTop: '8px', fontWeight: '600' }}>업로드 중...</p>
+                    </div>
+                  ) : (
+                    <div className="upload-content" style={{ textAlign: 'center', color: '#fff' }}>
+                      <Camera size={32} />
+                      <p style={{ fontSize: '12px', marginTop: '8px', fontWeight: '600' }}>이미지 변경</p>
+                    </div>
+                  )}
+                </div>
+
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  style={{ display: 'none' }} 
+                  accept="image/*"
+                  onChange={handleImageUpload}
                 />
               </div>
 
