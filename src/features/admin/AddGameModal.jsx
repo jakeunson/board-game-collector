@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, MessageSquare, Image, Search, Info } from 'lucide-react';
 
-function AddGameModal({ onClose }) {
+export default function AddGameModal({ onClose }) {
   return (
     <div 
       className="animate-fade-in"
@@ -126,5 +126,3 @@ function GuideItem({ icon, title, desc }) {
     </div>
   );
 }
-
-export default AddGameModal;

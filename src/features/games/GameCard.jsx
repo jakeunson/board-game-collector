@@ -157,4 +157,4 @@ function GameCard({ game, onClick }) {
   );
 }
 
-export default GameCard;
+export default React.memo(GameCard);

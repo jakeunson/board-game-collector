@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 
 // Known BGG IDs for Korean games (name → bggId)
 const BGG_IDS = {
@@ -138,7 +138,6 @@ const BGG_IDS = {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function fetchBGGData(bggId) {
-  // BGG JSON API — supports browser CORS, no proxy needed
   const res = await fetch(
     `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=boardgame&objectid=${bggId}&ajax=1&nosession=1`,
     { headers: { 'Accept': 'application/json' } }

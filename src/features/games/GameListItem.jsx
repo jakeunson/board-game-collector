@@ -135,4 +135,4 @@ function GameListItem({ game, onClick }) {
   );
 }
 
-export default GameListItem;
+export default React.memo(GameListItem);
