@@ -33,11 +33,13 @@ export function GameProvider({ children }) {
     if (window.confirm('이 게임을 컬렉션에서 삭제하시겠습니까?')) {
       try {
         await deleteDoc(doc(db, "games", id));
+        return true;
       } catch (error) {
         console.error("Error removing game:", error);
         throw error;
       }
     }
+    return false;
   };
 
   const updateGame = async (id, data) => {

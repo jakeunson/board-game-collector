@@ -120,7 +120,8 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
         category: game.category || '',
         bggId: game.bggId || '',
         boardlifeId: game.boardlifeId || '',
-        type: game.type || 'base'
+        type: game.type || 'base',
+        year: game.year || ''
       });
 
       if (isEditing) {
@@ -185,7 +186,8 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
         category: editData.category,
         bggId: editData.bggId,
         boardlifeId: editData.boardlifeId,
-        type: editData.type
+        type: editData.type,
+        year: editData.year
       };
 
       await onUpdate(game.id, updatedFields);
@@ -411,9 +413,13 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                       <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>난이도 (Weight)</label>
                       <input type="number" step="0.1" value={editData.weight} onChange={e => handleInputChange('weight', e.target.value)} style={{ width: '100%', padding: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)' }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>평점</label>
                       <input type="number" step="0.1" value={editData.rating} onChange={e => handleInputChange('rating', e.target.value)} style={{ width: '100%', padding: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>출시년도</label>
+                      <input type="text" value={editData.year} onChange={e => handleInputChange('year', e.target.value)} placeholder="2021" style={{ width: '100%', padding: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)' }} />
                     </div>
                   </>
                 ) : (
