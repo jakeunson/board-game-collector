@@ -15,28 +15,50 @@ export function FilterProvider({ children }) {
   }, [gameCollection]);
 
   const filteredCollection = useMemo(() => {
-    return gameCollection
-      .filter(game => {
-        if (filters.search && !game.name.toLowerCase().includes(filters.search.toLowerCase())) {
-          return false;
-        }
-        if (filters.players) {
-          const p = parseInt(filters.players);
-          const min = parseInt(game.minPlayers || 0);
-          const max = parseInt(game.maxPlayers || 99);
-          if (p < min || p > max) return false;
-        }
-        if (filters.difficulty) {
-          const w = parseFloat(game.weight || 0);
-          if (filters.difficulty === '1' && w > 2.0) return false;
-          if (filters.difficulty === '2' && (w <= 2.0 || w > 3.0)) return false;
-          if (filters.difficulty === '3' && (w <= 3.0 || w > 4.0)) return false;
-          if (filters.difficulty === '4' && w <= 4.0) return false;
-        }
-        if (filters.category && (!game.category || !game.category.includes(filters.category))) return false;
-        return true;
-      })
+    const filtered = gameCollection.filter(game => {
+      if (filters.search && !game.name.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+      if (filters.players) {
+        const p = parseInt(filters.players);
+        const min = parseInt(game.minPlayers || 0);
+        const max = parseInt(game.maxPlayers || 99);
+        if (p < min || p > max) return false;
+      }
+      if (filters.difficulty) {
+        const w = parseFloat(game.weight || 0);
+        if (filters.difficulty === '1' && w > 2.0) return false;
+        if (filters.difficulty === '2' && (w <= 2.0 || w > 3.0)) return false;
+        if (filters.difficulty === '3' && (w <= 3.0 || w > 4.0)) return false;
+        if (filters.difficulty === '4' && w <= 4.0) return false;
+      }
+      if (filters.category && (!game.category || !game.category.includes(filters.category))) return false;
+      return true;
+    });
+
+    // 1. 기본판 및 독립 게임 정렬 (이름순)
+    const baseAndStandalone = filtered
+      .filter(g => g.type !== 'expansion' || !g.parentGameId)
       .sort((a, b) => a.name.localeCompare(b.name));
+
+    const finalSorted = [];
+
+    // 2. 확장판 끼워 넣기 (출시년도 오름차순)
+    baseAndStandalone.forEach(base => {
+      finalSorted.push(base);
+      
+      const expansions = filtered
+        .filter(g => g.type === 'expansion' && g.parentGameId === base.id)
+        .sort((a, b) => {
+          const yearA = parseInt(a.year || 0);
+          const yearB = parseInt(b.year || 0);
+          return yearA - yearB;
+        });
+        
+      finalSorted.push(...expansions);
+    });
+
+    return finalSorted;
   }, [gameCollection, filters]);
 
   const hasActiveFilters = useMemo(() => {
