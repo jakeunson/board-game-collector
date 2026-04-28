@@ -63,9 +63,11 @@ export default function Header({ onOpenAddModal }) {
         >
           {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
         </button>
-        <button className="btn-primary" onClick={onOpenAddModal}>
-          + URL로 게임 추가
-        </button>
+        {(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
+          <button className="btn-primary" onClick={onOpenAddModal}>
+            + URL로 게임 추가
+          </button>
+        )}
       </div>
     </header>
   );
