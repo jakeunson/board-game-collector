@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/boardlife/:path*",
+      "destination": "https://boardlife.co.kr/:path*"
+    },
+    {
+      "source": "/bgg-api/:path*",
+      "destination": "https://api.geekdo.com/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
