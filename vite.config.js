@@ -21,6 +21,12 @@ export default defineConfig(({ mode }) => {
             });
           },
         },
+        '/bgg-api': {
+          target: 'https://api.geekdo.com',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/bgg-api/, ''),
+        },
         '/boardlife': {
           target: 'https://boardlife.co.kr',
           changeOrigin: true,

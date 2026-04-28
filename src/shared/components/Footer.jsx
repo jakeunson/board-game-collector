@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Footer({ onOpenAdmin }) {
+export default function Footer({ onOpenAdmin, onOpenRental }) {
   return (
     <footer style={{
       marginTop: 'auto', padding: '32px 0',
@@ -12,9 +12,20 @@ export default function Footer({ onOpenAdmin }) {
       <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '12px' }}>
         <span 
           onClick={onOpenAdmin} 
-          style={{ cursor: 'pointer', hover: { color: 'var(--text-secondary)' } }}
+          style={{ cursor: 'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}
         >
           Admin Tools
+        </span>
+        <span>|</span>
+        <span 
+          onClick={onOpenRental} 
+          style={{ cursor: 'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}
+        >
+          대여 관리
         </span>
       </div>
     </footer>

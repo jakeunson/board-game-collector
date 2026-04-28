@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Users, Clock, Star, Brain, X, Trash2, ExternalLink, Video, Search, Globe, Calendar, Layers, Puzzle, Camera, Loader2, Edit2, Save, Undo } from 'lucide-react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../firebase';
+import { addDoc, collection } from 'firebase/firestore';
+import { storage, db } from '../../firebase';
 import { useGames } from '../../contexts/GameContext';
 import noImage from '../../assets/no-image.jpg';
 
@@ -103,6 +104,12 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
   const [editData, setEditData] = useState({});
   const [selectedExpansions, setSelectedExpansions] = useState([]);
   const fileInputRef = useRef(null);
+
+  const [showRentForm, setShowRentForm] = useState(false);
+  const [rentEmail, setRentEmail] = useState('');
+  const [rentStartDate, setRentStartDate] = useState('');
+  const [rentEndDate, setRentEndDate] = useState('');
+  const [isSubmittingRent, setIsSubmittingRent] = useState(false);
 
   useEffect(() => {
     if (game) {
@@ -208,6 +215,36 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
     } catch (error) {
       console.error('Failed to update game data:', error);
       alert('저장하는 동안 오류가 발생했습니다.');
+    }
+  };
+
+  const handleRentSubmit = async (e) => {
+    e.preventDefault();
+    if (!rentEmail || !rentStartDate || !rentEndDate) {
+      alert('모든 필드를 입력해주세요.');
+      return;
+    }
+    setIsSubmittingRent(true);
+    try {
+      await addDoc(collection(db, "rentalRequests"), {
+        gameId: game.id,
+        gameName: game.name,
+        email: rentEmail,
+        rentDate: rentStartDate,
+        returnDate: rentEndDate,
+        status: 'pending',
+        requestedAt: new Date().toISOString()
+      });
+      alert('대여 신청이 완료되었습니다.');
+      setShowRentForm(false);
+      setRentEmail('');
+      setRentStartDate('');
+      setRentEndDate('');
+    } catch (error) {
+      console.error('Failed to submit rent request:', error);
+      alert('대여 신청 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmittingRent(false);
     }
   };
 
@@ -327,6 +364,56 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
 
             {/* Left Column: Image + Stats */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* Rent Request Section */}
+              {!isEditing && (
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                  {game.isRented ? (
+                    <div style={{ textAlign: 'center', color: '#ef4444', fontWeight: '700', fontSize: '14px', padding: '8px' }}>
+                      🔒 현재 대여중인 게임입니다.
+                    </div>
+                  ) : (
+                    <>
+                      {!showRentForm ? (
+                        <button 
+                          onClick={() => setShowRentForm(true)}
+                          className="btn-primary"
+                          style={{ width: '100%', padding: '10px', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                        >
+                          <Calendar size={16} /> 대여 신청하기
+                        </button>
+                      ) : (
+                        <form onSubmit={handleRentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <h4 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>대여 신청 정보 입력</h4>
+                          <div>
+                            <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>이메일</label>
+                            <input type="email" required value={rentEmail} onChange={e => setRentEmail(e.target.value)} placeholder="example@email.com" style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px' }} />
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>대여 시작일</label>
+                              <input type="date" required value={rentStartDate} onChange={e => setRentStartDate(e.target.value)} onClick={(e) => e.target.showPicker()} style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px', cursor: 'pointer' }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>반납 예정일</label>
+                              <input type="date" required value={rentEndDate} onChange={e => setRentEndDate(e.target.value)} onClick={(e) => e.target.showPicker()} style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px', cursor: 'pointer' }} />
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                            <button type="submit" disabled={isSubmittingRent} className="btn-primary" style={{ flex: 1, padding: '8px' }}>
+                              {isSubmittingRent ? '제출 중...' : '신청 완료'}
+                            </button>
+                            <button type="button" onClick={() => setShowRentForm(false)} style={{ flex: 1, padding: '8px', background: 'none', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                              취소
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
               <div
                 className="image-container"
                 style={{
@@ -690,6 +777,7 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                   </div>
                 </div>
               )}
+
 
               {/* Delete Button */}
               {!isEditing && (

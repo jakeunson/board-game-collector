@@ -16,6 +16,8 @@ import GameListItem from './features/games/GameListItem';
 import GameDetail from './features/games/GameDetail';
 import AddGameModal from './features/admin/AddGameModal';
 import BggEnricher from './features/admin/BggEnricher';
+import AdminAuthModal from './features/admin/AdminAuthModal';
+import RentalManager from './features/admin/RentalManager';
 
 import './App.css';
 
@@ -26,6 +28,8 @@ function AppContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [showEnricher, setShowEnricher] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showRentalManager, setShowRentalManager] = useState(false);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -63,16 +67,30 @@ function AppContent() {
           </div>
         )}
 
-        <Footer onOpenAdmin={() => setShowEnricher(true)} />
+        <Footer onOpenAdmin={() => setShowEnricher(true)} onOpenRental={() => setShowAuthModal(true)} />
       </div>
 
       {/* Modals via Portals */}
       {isModalOpen && createPortal(
-        <AddGameModal onClose={() => setIsModalOpen(false)} onAdd={addGame} />,
+        <AddGameModal 
+          onClose={() => setIsModalOpen(false)} 
+          onAddSuccess={(game) => {
+            setIsModalOpen(false);
+            setSelectedGame(game);
+          }} 
+        />,
         document.body
       )}
       {showEnricher && createPortal(
         <BggEnricher onDone={() => setShowEnricher(false)} />,
+        document.body
+      )}
+      {showAuthModal && createPortal(
+        <AdminAuthModal onClose={() => setShowAuthModal(false)} onSuccess={() => setShowRentalManager(true)} />,
+        document.body
+      )}
+      {showRentalManager && createPortal(
+        <RentalManager onClose={() => setShowRentalManager(false)} />,
         document.body
       )}
       {selectedGame && createPortal(

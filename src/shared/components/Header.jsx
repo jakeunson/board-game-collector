@@ -64,7 +64,7 @@ export default function Header({ onOpenAddModal }) {
           {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
         </button>
         <button className="btn-primary" onClick={onOpenAddModal}>
-          + AI에게 추가 요청
+          + URL로 게임 추가
         </button>
       </div>
     </header>

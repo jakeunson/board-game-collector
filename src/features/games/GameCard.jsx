@@ -60,6 +60,24 @@ function GameCard({ game, onClick }) {
             확장
           </span>
         )}
+        {game.isRented && (
+          <span style={{
+            position: 'absolute',
+            top: '12px',
+            left: '12px',
+            background: 'rgba(37, 99, 235, 0.9)',
+            color: '#ffffff',
+            fontSize: '11px',
+            fontWeight: '700',
+            padding: '4px 8px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+            zIndex: 10,
+            backdropFilter: 'blur(4px)',
+          }}>
+            대여중
+          </span>
+        )}
         {showImage ? (
           <>
             <img
