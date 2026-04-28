@@ -93,13 +93,23 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
     setStatusMessage('보드라이프에서 데이터를 가져오는 중...');
 
     try {
-      // 1. Vite 로컬 프록시를 통해 HTML 가져오기 (UTF-8)
-      const proxyUrl = `/boardlife/game/${boardlifeId}`;
-      const response = await fetch(proxyUrl);
-      
-      if (!response.ok) throw new Error('페이지를 불러오는데 실패했습니다.');
-      
-      const htmlText = await response.text();
+      // 1. 환경에 따른 프록시 분기 (개발 vs 배포)
+      const isDev = import.meta.env.DEV;
+      let htmlText = '';
+
+      if (isDev) {
+        const proxyUrl = `/boardlife/game/${boardlifeId}`;
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error('페이지를 불러오는데 실패했습니다.');
+        htmlText = await response.text();
+      } else {
+        // 배포 환경(Vercel 등)에서는 AllOrigins CORS 우회 프록시 활용
+        const targetUrl = `https://boardlife.co.kr/game/${boardlifeId}`;
+        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+        if (!response.ok) throw new Error('페이지를 불러오는데 실패했습니다.');
+        const data = await response.json();
+        htmlText = data.contents;
+      }
 
       setStatusMessage('데이터 분석 중...');
 
@@ -188,12 +198,22 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
         bggId = bggMatch[1];
         setStatusMessage('BGG에서 상세 데이터 수집 중...');
         try {
-          const bggRes = await fetch(
-            `/bgg-api/api/geekitems?objecttype=thing&subtype=boardgame&objectid=${bggId}&ajax=1&nosession=1`,
-            { headers: { 'Accept': 'application/json' } }
-          );
+          const isDev = import.meta.env.DEV;
+          let bggUrl = `/bgg-api/api/geekitems?objecttype=thing&subtype=boardgame&objectid=${bggId}&ajax=1&nosession=1`;
+          if (!isDev) {
+            const targetBggUrl = `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=boardgame&objectid=${bggId}&ajax=1&nosession=1`;
+            bggUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetBggUrl)}`;
+          }
+
+          const bggRes = await fetch(bggUrl, isDev ? { headers: { 'Accept': 'application/json' } } : {});
           if (bggRes.ok) {
-            const bggData = await bggRes.json();
+            let bggData;
+            if (isDev) {
+              bggData = await bggRes.json();
+            } else {
+              const allOriginsData = await bggRes.json();
+              bggData = JSON.parse(allOriginsData.contents);
+            }
             const item = bggData?.item;
             if (item) {
               if (item.name) englishName = item.name.trim();
