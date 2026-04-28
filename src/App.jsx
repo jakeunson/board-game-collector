@@ -22,7 +22,7 @@ import './App.css';
 function AppContent() {
   const { loading, addGame, removeGame, updateGame } = useGames();
   const { filteredCollection, viewMode } = useFilters();
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [showEnricher, setShowEnricher] = useState(false);
@@ -30,9 +30,9 @@ function AppContent() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div className="container">
-        
+
         <Header onOpenAddModal={() => setIsModalOpen(true)} />
-        
+
         <FilterBar />
 
         {/* ── Content ── */}
@@ -76,11 +76,11 @@ function AppContent() {
         document.body
       )}
       {selectedGame && createPortal(
-        <GameDetail 
-          game={selectedGame} 
-          onClose={() => setSelectedGame(null)} 
-          onDelete={removeGame} 
-          onUpdate={updateGame} 
+        <GameDetail
+          game={selectedGame}
+          onClose={() => setSelectedGame(null)}
+          onDelete={removeGame}
+          onUpdate={updateGame}
         />,
         document.body
       )}

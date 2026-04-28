@@ -2,13 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Users, Clock, Star, Brain, X, Trash2, ExternalLink, Video, Search, Globe, Calendar, Layers, Puzzle, Camera, Loader2, Edit2, Save, Undo } from 'lucide-react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../firebase';
+import { useGames } from '../../contexts/GameContext';
+import noImage from '../../assets/no-image.jpg';
 
 function StatCard({ icon, label, value, color }) {
   if (value === undefined || value === null || value === '') return null;
   return (
-    <div className="glass" style={{ 
-      padding: '12px 8px', 
-      borderRadius: '12px', 
+    <div className="glass" style={{
+      padding: '12px 8px',
+      borderRadius: '12px',
       textAlign: 'center',
       display: 'flex',
       flexDirection: 'column',
@@ -29,12 +31,12 @@ function TagList({ items, icon, label }) {
   if (!items) return null;
   return (
     <div style={{ marginBottom: '16px' }}>
-      <h3 style={{ 
-        fontSize: '11px', 
-        fontWeight: '800', 
-        color: 'var(--text-tertiary)', 
-        marginBottom: '8px', 
-        textTransform: 'uppercase', 
+      <h3 style={{
+        fontSize: '11px',
+        fontWeight: '800',
+        color: 'var(--text-tertiary)',
+        marginBottom: '8px',
+        textTransform: 'uppercase',
         letterSpacing: '0.05em',
         display: 'flex',
         alignItems: 'center',
@@ -44,13 +46,13 @@ function TagList({ items, icon, label }) {
       </h3>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
         {items.split(',').map((item, i) => (
-          <span 
-            key={i} 
-            style={{ 
-              padding: '4px 10px', 
-              background: 'var(--bg-app)', 
-              borderRadius: '8px', 
-              fontSize: '12px', 
+          <span
+            key={i}
+            style={{
+              padding: '4px 10px',
+              background: 'var(--bg-app)',
+              borderRadius: '8px',
+              fontSize: '12px',
               color: 'var(--text-secondary)',
               border: '1px solid var(--border-subtle)'
             }}
@@ -69,11 +71,11 @@ function LinkButton({ href, icon, label, color }) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      style={{ 
-        display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', 
-        background: 'var(--bg-app)', borderRadius: '10px', textDecoration: 'none', 
+      style={{
+        display: 'flex', alignItems: 'center', gap: '8px', padding: '10px',
+        background: 'var(--bg-app)', borderRadius: '10px', textDecoration: 'none',
         color: 'var(--text-primary)', fontSize: '12px', fontWeight: '600',
-        border: '1px solid var(--border-subtle)', transition: 'all 0.2s' 
+        border: '1px solid var(--border-subtle)', transition: 'all 0.2s'
       }}
       onMouseEnter={e => {
         e.currentTarget.style.borderColor = color;
@@ -92,7 +94,10 @@ function LinkButton({ href, icon, label, color }) {
   );
 }
 
-export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
+export default function GameDetail({ game: initialGame, onClose, onDelete, onUpdate }) {
+  const { gameCollection } = useGames();
+  const game = gameCollection.find(g => g.id === initialGame.id) || initialGame;
+
   const [isUploading, setIsUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
@@ -111,6 +116,7 @@ export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
         description: game.description || '',
         theme: game.theme || '',
         mechanisms: game.mechanisms || '',
+        category: game.category || '',
         bggId: game.bggId || '',
         boardlifeId: game.boardlifeId || ''
       });
@@ -139,11 +145,11 @@ export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
       const snapshot = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
 
-      await onUpdate(game.id, { 
+      await onUpdate(game.id, {
         image: downloadURL,
         thumbnail: downloadURL
       });
-      
+
       alert('이미지가 성공적으로 업데이트되었습니다.');
     } catch (error) {
       console.error('Upload failed:', error);
@@ -166,6 +172,7 @@ export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
         description: editData.description,
         theme: editData.theme,
         mechanisms: editData.mechanisms,
+        category: editData.category,
         bggId: editData.bggId,
         boardlifeId: editData.boardlifeId
       };
@@ -219,18 +226,18 @@ export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
       >
         {/* Header */}
         <div style={{
-          padding: '16px 24px', display: 'flex', justifyContent: 'space-between', 
+          padding: '16px 24px', display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', borderBottom: '1px solid var(--border-subtle)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               {isEditing ? '정보 수정 모드' : 'Game Details'}
             </span>
-            <span style={{ 
-              fontSize: '11px', 
-              background: 'var(--bg-app)', 
-              padding: '2px 8px', 
-              borderRadius: '6px', 
+            <span style={{
+              fontSize: '11px',
+              background: 'var(--bg-app)',
+              padding: '2px 8px',
+              borderRadius: '6px',
               color: 'var(--accent-primary)',
               fontWeight: '700',
               border: '1px solid var(--border-subtle)'
@@ -238,7 +245,7 @@ export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
               ID: {game.boardlifeId || game.id}
             </span>
           </div>
-          
+
           <div style={{ display: 'flex', gap: '8px' }}>
             {isEditing ? (
               <>
@@ -276,10 +283,10 @@ export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
               </button>
             )}
 
-            <button 
-              onClick={onClose} 
-              style={{ 
-                background: 'var(--bg-app)', border: 'none', cursor: 'pointer', 
+            <button
+              onClick={onClose}
+              style={{
+                background: 'var(--bg-app)', border: 'none', cursor: 'pointer',
                 padding: '6px', color: 'var(--text-secondary)', borderRadius: '50%',
                 display: 'flex', transition: 'all 0.2s'
               }}
@@ -292,64 +299,70 @@ export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '270px 1fr', gap: '32px' }}>
-            
+
             {/* Left Column: Image + Stats */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div 
+              <div
                 className="image-container"
-                style={{ 
+                style={{
                   position: 'relative',
-                  width: '100%', 
-                  borderRadius: '20px', 
-                  overflow: 'hidden', 
+                  width: '100%',
+                  borderRadius: '20px',
+                  overflow: 'hidden',
                   boxShadow: 'var(--shadow-lg)',
                   border: '1px solid var(--border-subtle)',
                   background: 'var(--bg-app)'
                 }}
               >
                 <img
-                  src={game.image}
+                  src={game.image || noImage}
                   alt={game.name}
                   referrerPolicy="no-referrer"
-                  style={{ 
-                    width: '100%', 
-                    height: 'auto', 
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = noImage;
+                  }}
+                  style={{
+                    width: '100%',
+                    height: 'auto',
                     display: 'block',
                     opacity: isUploading ? 0.5 : 1,
                     transition: 'opacity 0.3s'
                   }}
                 />
-                
-                {/* Upload Overlay */}
-                <div 
-                  className="image-upload-overlay"
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: isUploading ? 'default' : 'pointer',
-                  }}
-                  onClick={() => !isUploading && fileInputRef.current?.click()}
-                >
-                  {isUploading ? (
-                    <div style={{ textAlign: 'center', color: '#fff', opacity: 1 }}>
-                      <Loader2 size={32} className="animate-spin" />
-                      <p style={{ fontSize: '12px', marginTop: '8px', fontWeight: '600' }}>업로드 중...</p>
-                    </div>
-                  ) : (
-                    <div className="upload-content" style={{ textAlign: 'center', color: '#fff' }}>
-                      <Camera size={32} />
-                      <p style={{ fontSize: '12px', marginTop: '8px', fontWeight: '600' }}>이미지 변경</p>
-                    </div>
-                  )}
-                </div>
 
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  style={{ display: 'none' }} 
+                {/* Upload Overlay */}
+                {isEditing && (
+                  <div
+                    className="image-upload-overlay"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: isUploading ? 'default' : 'pointer',
+                    }}
+                    onClick={() => !isUploading && fileInputRef.current?.click()}
+                  >
+                    {isUploading ? (
+                      <div style={{ textAlign: 'center', color: '#fff', opacity: 1 }}>
+                        <Loader2 size={32} className="animate-spin" />
+                        <p style={{ fontSize: '12px', marginTop: '8px', fontWeight: '600' }}>업로드 중...</p>
+                      </div>
+                    ) : (
+                      <div className="upload-content" style={{ textAlign: 'center', color: '#fff' }}>
+                        <Camera size={32} />
+                        <p style={{ fontSize: '12px', marginTop: '8px', fontWeight: '600' }}>이미지 변경</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
                   accept="image/*"
                   onChange={handleImageUpload}
                 />
@@ -431,9 +444,9 @@ export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
                 {isEditing ? (
                   <div>
                     <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-tertiary)', display: 'block', marginBottom: '6px' }}>게임 소개</label>
-                    <textarea 
-                      value={editData.description} 
-                      onChange={e => handleInputChange('description', e.target.value)} 
+                    <textarea
+                      value={editData.description}
+                      onChange={e => handleInputChange('description', e.target.value)}
                       rows={6}
                       style={{ width: '100%', padding: '10px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', lineHeight: '1.6', resize: 'vertical' }}
                     />
@@ -442,7 +455,7 @@ export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
                   game.description && (
                     <div>
                       <h3 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-tertiary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>게임 소개</h3>
-                      <p style={{ 
+                      <p style={{
                         lineHeight: '1.6', color: 'var(--text-secondary)', fontSize: '13px',
                         display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical', overflow: 'hidden'
                       }}>
@@ -453,14 +466,20 @@ export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
                 )}
 
                 {isEditing ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>테마 (쉼표로 구분)</label>
-                      <input value={editData.theme} onChange={e => handleInputChange('theme', e.target.value)} placeholder="경제, 농업" style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)' }} />
+                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>카테고리 (쉼표로 구분)</label>
+                      <input value={editData.category} onChange={e => handleInputChange('category', e.target.value)} placeholder="전략게임, 테마게임" style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)' }} />
                     </div>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>진행 방식 (쉼표로 구분)</label>
-                      <input value={editData.mechanisms} onChange={e => handleInputChange('mechanisms', e.target.value)} placeholder="액션 드래프팅" style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)' }} />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>테마 (쉼표로 구분)</label>
+                        <input value={editData.theme} onChange={e => handleInputChange('theme', e.target.value)} placeholder="경제, 농업" style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>진행 방식 (쉼표로 구분)</label>
+                        <input value={editData.mechanisms} onChange={e => handleInputChange('mechanisms', e.target.value)} placeholder="액션 드래프팅" style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)' }} />
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -490,29 +509,29 @@ export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
                 <div>
                   <h3 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-tertiary)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>추가 정보 및 리뷰</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <LinkButton 
+                    <LinkButton
                       href={game.bggId ? `https://boardgamegeek.com/boardgame/${game.bggId}` : `https://boardgamegeek.com/search/boardgames?q=${encodeURIComponent(game.name)}`}
-                      icon={<Globe size={16} />} 
-                      label="BoardGameGeek" 
-                      color="#ff5100" 
+                      icon={<Globe size={16} />}
+                      label="BoardGameGeek"
+                      color="#ff5100"
                     />
-                    <LinkButton 
+                    <LinkButton
                       href={game.boardlifeId ? `https://boardlife.co.kr/game/${game.boardlifeId}` : `https://boardlife.co.kr/bbs_list.php?tb=boardgame_strategy&search_mode=ok&game_id=&search_word=${encodeURIComponent(game.name)}`}
-                      icon={<ExternalLink size={16} />} 
-                      label="BoardLife" 
-                      color="#005a9e" 
+                      icon={<ExternalLink size={16} />}
+                      label="BoardLife"
+                      color="#005a9e"
                     />
-                    <LinkButton 
+                    <LinkButton
                       href={`https://search.naver.com/search.naver?where=post&query=${encodeURIComponent(game.name + ' 보드게임')}`}
-                      icon={<Search size={16} />} 
-                      label="Naver Review" 
-                      color="#10b981" 
+                      icon={<Search size={16} />}
+                      label="Naver Review"
+                      color="#10b981"
                     />
-                    <LinkButton 
+                    <LinkButton
                       href={`https://www.youtube.com/results?search_query=${encodeURIComponent(game.name + ' 보드게임 룰 설명')}`}
-                      icon={<Video size={16} />} 
-                      label="YouTube Tutorial" 
-                      color="#ef4444" 
+                      icon={<Video size={16} />}
+                      label="YouTube Tutorial"
+                      color="#ef4444"
                     />
                   </div>
                 </div>
@@ -522,7 +541,10 @@ export default function GameDetail({ game, onClose, onDelete, onUpdate }) {
               {!isEditing && (
                 <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', paddingTop: '16px' }}>
                   <button
-                    onClick={() => onDelete(game.id)}
+                    onClick={async () => {
+                      const deleted = await onDelete(game.id);
+                      if (deleted) onClose();
+                    }}
                     style={{
                       background: 'none', border: '1px solid rgba(220, 38, 38, 0.2)', color: '#ef4444',
                       borderRadius: '10px', padding: '8px 16px', fontSize: '13px', fontWeight: '600',

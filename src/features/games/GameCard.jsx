@@ -42,6 +42,24 @@ function GameCard({ game, onClick }) {
     >
       {/* Image / Placeholder */}
       <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
+        {game.type === 'expansion' && (
+          <span style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            background: 'rgba(239, 68, 68, 0.9)',
+            color: '#ffffff',
+            fontSize: '11px',
+            fontWeight: '700',
+            padding: '4px 8px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+            zIndex: 10,
+            backdropFilter: 'blur(4px)',
+          }}>
+            확장
+          </span>
+        )}
         {showImage ? (
           <>
             <img
