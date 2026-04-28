@@ -108,6 +108,19 @@ export default function FilterBar() {
             ))}
           </div>
         </div>
+
+        <div style={{ width: '1px', height: '24px', background: 'var(--border-medium)' }} />
+
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            기타
+          </span>
+          <Chip
+            label="기본판만 보기"
+            active={filters.showBaseOnly}
+            onClick={() => updateFilter('showBaseOnly', !filters.showBaseOnly)}
+          />
+        </div>
       </div>
 
       {/* Row 2: Search + Category + Reset */}

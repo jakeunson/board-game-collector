@@ -5,7 +5,7 @@ const FilterContext = createContext();
 
 export function FilterProvider({ children }) {
   const { gameCollection } = useGames();
-  const [filters, setFilters] = useState({ search: '', players: '', difficulty: '', category: '' });
+  const [filters, setFilters] = useState({ search: '', players: '', difficulty: '', category: '', showBaseOnly: false });
   const [viewMode, setViewMode] = useState('grid');
 
   const allCategories = useMemo(() => {
@@ -33,6 +33,12 @@ export function FilterProvider({ children }) {
         if (filters.difficulty === '4' && w <= 4.0) return false;
       }
       if (filters.category && (!game.category || !game.category.includes(filters.category))) return false;
+      
+      // 기본판만 보기 필터
+      if (filters.showBaseOnly && game.type === 'expansion') {
+        return false;
+      }
+
       return true;
     });
 
@@ -62,11 +68,11 @@ export function FilterProvider({ children }) {
   }, [gameCollection, filters]);
 
   const hasActiveFilters = useMemo(() => {
-    return !!(filters.search || filters.players || filters.difficulty || filters.category);
+    return !!(filters.search || filters.players || filters.difficulty || filters.category || filters.showBaseOnly);
   }, [filters]);
 
   const resetFilters = () => {
-    setFilters({ search: '', players: '', difficulty: '', category: '' });
+    setFilters({ search: '', players: '', difficulty: '', category: '', showBaseOnly: false });
   };
 
   const updateFilter = (field, value) => {
