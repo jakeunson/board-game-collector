@@ -94,7 +94,7 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
 
     try {
       // 1. 환경에 따른 프록시 분기 (개발 vs 배포)
-      const isDev = import.meta.env.DEV;
+      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       let htmlText = '';
 
       if (isDev) {
@@ -103,12 +103,22 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
         if (!response.ok) throw new Error('페이지를 불러오는데 실패했습니다.');
         htmlText = await response.text();
       } else {
-        // 배포 환경(Vercel 등)에서는 AllOrigins CORS 우회 프록시 활용
+        // 배포 환경(Vercel 등)에서는 AllOrigins CORS 우회 프록시 활용 (실패 시 corsproxy.io로 전환)
         const targetUrl = `https://boardlife.co.kr/game/${boardlifeId}`;
-        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
-        if (!response.ok) throw new Error('페이지를 불러오는데 실패했습니다.');
-        const data = await response.json();
-        htmlText = data.contents;
+        try {
+          const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+          if (response.ok) {
+            const data = await response.json();
+            htmlText = data.contents;
+          } else {
+            throw new Error('AllOrigins non-ok');
+          }
+        } catch (e) {
+          console.error("AllOrigins 실패, CorsProxy 시도", e);
+          const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
+          if (!response.ok) throw new Error('데이터를 가져오는데 완전히 실패했습니다.');
+          htmlText = await response.text();
+        }
       }
 
       setStatusMessage('데이터 분석 중...');
@@ -198,7 +208,7 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
         bggId = bggMatch[1];
         setStatusMessage('BGG에서 상세 데이터 수집 중...');
         try {
-          const isDev = import.meta.env.DEV;
+          const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
           let bggUrl = `/bgg-api/api/geekitems?objecttype=thing&subtype=boardgame&objectid=${bggId}&ajax=1&nosession=1`;
           if (!isDev) {
             const targetBggUrl = `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=boardgame&objectid=${bggId}&ajax=1&nosession=1`;
