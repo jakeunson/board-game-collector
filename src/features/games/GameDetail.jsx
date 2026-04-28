@@ -94,13 +94,14 @@ function LinkButton({ href, icon, label, color }) {
   );
 }
 
-export default function GameDetail({ game: initialGame, onClose, onDelete, onUpdate }) {
-  const { gameCollection } = useGames();
+export default function GameDetail({ game: initialGame, onClose, onDelete, onUpdate, onGameChange }) {
+  const { gameCollection, updateGame } = useGames();
   const game = gameCollection.find(g => g.id === initialGame.id) || initialGame;
 
   const [isUploading, setIsUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
+  const [selectedExpansions, setSelectedExpansions] = useState([]);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -118,8 +119,17 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
         mechanisms: game.mechanisms || '',
         category: game.category || '',
         bggId: game.bggId || '',
-        boardlifeId: game.boardlifeId || ''
+        boardlifeId: game.boardlifeId || '',
+        type: game.type || 'base'
       });
+
+      if (isEditing) {
+        setSelectedExpansions(
+          gameCollection
+            .filter(g => g.parentGameId === game.id)
+            .map(g => g.id)
+        );
+      }
     }
   }, [game, isEditing]);
 
@@ -174,10 +184,23 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
         mechanisms: editData.mechanisms,
         category: editData.category,
         bggId: editData.bggId,
-        boardlifeId: editData.boardlifeId
+        boardlifeId: editData.boardlifeId,
+        type: editData.type
       };
 
       await onUpdate(game.id, updatedFields);
+
+      if (editData.type === 'base') {
+        const prevExpansions = gameCollection.filter(g => g.parentGameId === game.id).map(g => g.id);
+        const removed = prevExpansions.filter(id => !selectedExpansions.includes(id));
+        const added = selectedExpansions.filter(id => !prevExpansions.includes(id));
+
+        await Promise.all([
+          ...removed.map(id => updateGame(id, { parentGameId: "" })),
+          ...added.map(id => updateGame(id, { parentGameId: game.id, type: "expansion" }))
+        ]);
+      }
+
       setIsEditing(false);
       alert('게임 정보가 수정되었습니다.');
     } catch (error) {
@@ -490,6 +513,60 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                 )}
               </div>
 
+              {/* Type and Expansion Selection */}
+              {isEditing && (
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>구분 (기본판 / 확장판)</label>
+                    <select 
+                      value={editData.type} 
+                      onChange={e => handleInputChange('type', e.target.value)}
+                      style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px' }}
+                    >
+                      <option value="base">기본판</option>
+                      <option value="expansion">확장판</option>
+                    </select>
+                  </div>
+
+                  {editData.type === 'base' && (
+                    <div>
+                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>확장판 연결 (체크 시 묶음)</label>
+                      <div style={{ 
+                        maxHeight: '150px', 
+                        overflowY: 'auto', 
+                        background: 'var(--bg-app)', 
+                        border: '1px solid var(--border-subtle)', 
+                        borderRadius: '8px', 
+                        padding: '8px',
+                        marginTop: '4px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}>
+                        {gameCollection
+                          .filter(g => g.id !== game.id && g.type === 'expansion')
+                          .map(exp => (
+                            <label key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={selectedExpansions.includes(exp.id)} 
+                                onChange={e => {
+                                  if (e.target.checked) {
+                                    setSelectedExpansions(prev => [...prev, exp.id]);
+                                  } else {
+                                    setSelectedExpansions(prev => prev.filter(id => id !== exp.id));
+                                  }
+                                }} 
+                              />
+                              {exp.name}
+                            </label>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* IDs for Edit */}
               {isEditing && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
@@ -501,6 +578,77 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                     <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>BGG ID</label>
                     <input value={editData.bggId} onChange={e => handleInputChange('bggId', e.target.value)} style={{ width: '100%', padding: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)' }} />
                   </div>
+                </div>
+              )}
+
+              {/* Base/Expansion Relationship Display */}
+              {!isEditing && (
+                <div style={{ marginBottom: '16px' }}>
+                  {game.type === 'base' && (
+                    <>
+                      <h3 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-tertiary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>포함된 확장판</h3>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {gameCollection
+                          .filter(g => g.parentGameId === game.id)
+                          .map(exp => (
+                            <span 
+                              key={exp.id} 
+                              onClick={() => onGameChange && onGameChange(exp)}
+                              style={{ 
+                                padding: '6px 12px', 
+                                background: 'rgba(239, 68, 68, 0.1)', 
+                                border: '1px solid rgba(239, 68, 68, 0.2)', 
+                                borderRadius: '8px', 
+                                fontSize: '13px', 
+                                color: '#ef4444',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                            >
+                              {exp.name}
+                            </span>
+                          ))}
+                        {gameCollection.filter(g => g.parentGameId === game.id).length === 0 && (
+                          <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>연결된 확장판이 없습니다.</span>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {game.type === 'expansion' && game.parentGameId && (
+                    <>
+                      <h3 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-tertiary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>필요한 기본판</h3>
+                      {(() => {
+                        const parent = gameCollection.find(g => g.id === game.parentGameId);
+                        return parent ? (
+                          <span 
+                            onClick={() => onGameChange && onGameChange(parent)}
+                            style={{ 
+                              padding: '6px 12px', 
+                              background: 'rgba(99, 102, 241, 0.1)', 
+                              border: '1px solid rgba(99, 102, 241, 0.2)', 
+                              borderRadius: '8px', 
+                              fontSize: '13px', 
+                              color: '#6366f1',
+                              fontWeight: '600',
+                              display: 'inline-block',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)'}
+                          >
+                            {parent.name}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>기본판 정보가 없습니다.</span>
+                        );
+                      })()}
+                    </>
+                  )}
                 </div>
               )}
 

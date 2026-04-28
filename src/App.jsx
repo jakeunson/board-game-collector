@@ -81,6 +81,7 @@ function AppContent() {
           onClose={() => setSelectedGame(null)}
           onDelete={removeGame}
           onUpdate={updateGame}
+          onGameChange={setSelectedGame}
         />,
         document.body
       )}
