@@ -44,6 +44,8 @@ function GameListItem({ game, onClick }) {
         cursor: 'pointer',
         transition: 'all 0.2s ease',
         borderLeft: '4px solid transparent',
+        minWidth: 0,
+        overflow: 'hidden',
       }}
       onMouseEnter={e => {
         if (!isMobile) {
@@ -116,9 +118,9 @@ function GameListItem({ game, onClick }) {
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
+        flexWrap: isMobile ? 'wrap' : 'nowrap',
         gap: isMobile ? '12px' : '20px', 
-        justifyContent: isMobile ? 'space-between' : 'flex-start',
-        flexShrink: 0,
+        justifyContent: 'flex-start',
         borderTop: isMobile ? '1px solid var(--border-subtle)' : 'none',
         paddingTop: isMobile ? '10px' : '0',
         marginTop: isMobile ? '2px' : '0'
