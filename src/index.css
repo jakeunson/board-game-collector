@@ -75,6 +75,8 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* ─────────────────────────────────────────
@@ -92,9 +94,11 @@ body {
    Layout
 ───────────────────────────────────────── */
 .container {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px 32px;
+  overflow-x: hidden;
 }
 
 @media (max-width: 768px) {
@@ -111,6 +115,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* ─────────────────────────────────────────

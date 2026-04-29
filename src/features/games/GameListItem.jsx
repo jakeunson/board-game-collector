@@ -46,6 +46,7 @@ function GameListItem({ game, onClick }) {
         borderLeft: '4px solid transparent',
         minWidth: 0,
         overflow: 'hidden',
+        width: '100%',
       }}
       onMouseEnter={e => {
         if (!isMobile) {
