@@ -334,16 +334,18 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                 </button>
               </>
             ) : (
-              <button
-                onClick={() => setIsEditing(true)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '4px',
-                  padding: '6px 12px', background: 'var(--bg-app)',
-                  border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '700', cursor: 'pointer'
-                }}
-              >
-                <Edit2 size={14} /> 정보 수정
-              </button>
+              (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    padding: '6px 12px', background: 'var(--bg-app)',
+                    border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+                  }}
+                >
+                  <Edit2 size={14} /> 정보 수정
+                </button>
+              )
             )}
 
             <button
