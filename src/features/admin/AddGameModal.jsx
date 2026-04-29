@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Loader2, Link, CheckCircle, AlertCircle } from 'lucide-react';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 
 const CATEGORY_MAP = {
@@ -66,12 +66,72 @@ const translateText = (text, map) => {
   }).join(', ');
 };
 
+
+
+const splitIntoChunks = (text, maxLength = 1000) => {
+  const chunks = [];
+  let currentChunk = '';
+  
+  const sentences = text.split(/([.!?]\s+)/);
+  for (let i = 0; i < sentences.length; i++) {
+    const sentence = sentences[i];
+    if ((currentChunk + sentence).length > maxLength) {
+      if (currentChunk) chunks.push(currentChunk.trim());
+      currentChunk = sentence;
+    } else {
+      currentChunk += sentence;
+    }
+  }
+  if (currentChunk) chunks.push(currentChunk.trim());
+  return chunks;
+};
+
+const translateToKorean = async (text) => {
+  if (!text) return '';
+  try {
+    const chunks = splitIntoChunks(text, 1000);
+    const translatedChunks = [];
+
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    for (const chunk of chunks) {
+      const baseUrl = isDev ? '/translate-api' : 'https://translate.googleapis.com';
+      const url = `${baseUrl}/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(chunk)}`;
+      
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data[0]) {
+            const translatedText = data[0].map(item => item[0]).join('');
+            translatedChunks.push(translatedText);
+          } else {
+            translatedChunks.push(chunk);
+          }
+        } else {
+          translatedChunks.push(chunk);
+        }
+      } catch (e) {
+        console.error("Translation error for chunk:", e);
+        translatedChunks.push(chunk);
+      }
+    }
+
+    return translatedChunks.join(' ');
+  } catch (err) {
+    console.error("Failed to translate:", err);
+    return text;
+  }
+};
+
 export default function AddGameModal({ onClose, onAddSuccess }) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [batchProgress, setBatchProgress] = useState('');
 
   const extractBoardlifeId = (inputUrl) => {
     const match = inputUrl.match(/\/game\/(\d+)/);
@@ -90,6 +150,20 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
     }
 
     setLoading(true);
+    setStatusMessage('중복 게임 확인 중...');
+
+    try {
+      const q = query(collection(db, "games"), where("boardlifeId", "==", boardlifeId));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        alert('이미 등록된 게임입니다.');
+        setError('이미 등록된 게임입니다.');
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.error("중복 검사 실패", err);
+    }
     setStatusMessage('보드라이프에서 데이터를 가져오는 중...');
 
     try {
@@ -199,19 +273,35 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
 
       // 4. BGG ID 추출 및 데이터 보강
       let bggId = '';
+      let bggSubtype = 'boardgame';
       let weight = '';
       let rating = '';
       let englishName = '';
 
-      const bggMatch = htmlText.match(/boardgamegeek\.com\/boardgame\/(\d+)/i) || htmlText.match(/boardgamegeek\.com\/.*?\/(\d+)/i);
+      const bggMatch = htmlText.match(/boardgamegeek\.com\/boardgame\/(\d+)/i);
+      const bggExpMatch = htmlText.match(/boardgamegeek\.com\/boardgameexpansion\/(\d+)/i);
+      const bggAnyMatch = htmlText.match(/boardgamegeek\.com\/.*?\/(\d+)/i);
+
       if (bggMatch) {
         bggId = bggMatch[1];
+        bggSubtype = 'boardgame';
+      } else if (bggExpMatch) {
+        bggId = bggExpMatch[1];
+        bggSubtype = 'boardgameexpansion';
+      } else if (bggAnyMatch) {
+        bggId = bggAnyMatch[1];
+        if (htmlText.includes('boardgameexpansion')) {
+          bggSubtype = 'boardgameexpansion';
+        }
+      }
+
+      if (bggId) {
         setStatusMessage('BGG에서 상세 데이터 수집 중...');
         try {
           const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-          let bggUrl = `/bgg-api/api/geekitems?objecttype=thing&subtype=boardgame&objectid=${bggId}&ajax=1&nosession=1`;
+          let bggUrl = `/bgg-api/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
           if (!isDev) {
-            const targetBggUrl = `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=boardgame&objectid=${bggId}&ajax=1&nosession=1`;
+            const targetBggUrl = `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
             bggUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetBggUrl)}`;
           }
 
@@ -242,6 +332,19 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
               if (!image && item.images) {
                 image = item.images.original || item.images.large || item.images.medium || '';
                 thumbnail = item.images.thumb || image;
+              }
+
+              // BGG JSON API의 description을 가져와 번역
+              if (item.description) {
+                const rawDesc = item.description;
+                const doc = new DOMParser().parseFromString(rawDesc, "text/html");
+                const cleanDesc = doc.documentElement.textContent;
+                
+                setStatusMessage('BGG 설명을 한글로 번역 중 (약 5~10초 소요)...');
+                const translated = await translateToKorean(cleanDesc);
+                if (translated && translated.length > 50) {
+                  description = translated;
+                }
               }
             }
           }
@@ -315,6 +418,125 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
       setError('게임 추가 중 오류가 발생했습니다: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBatchUpdate = async () => {
+    if (!window.confirm('이미 등록된 모든 게임의 소개글을 BGG에서 다시 가져와 한글로 일괄 업데이트하시겠습니까? (시간이 다소 소요됩니다)')) {
+      return;
+    }
+
+    setBatchLoading(true);
+    setError('');
+    
+    try {
+      setBatchProgress('Firestore에서 게임 목록 가져오는 중...');
+      const querySnapshot = await getDocs(collection(db, "games"));
+      const games = querySnapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+      
+      setBatchProgress(`총 ${games.length}개의 게임 발견. 업데이트를 시작합니다.`);
+      
+      for (let i = 0; i < games.length; i++) {
+        const game = games[i];
+        setBatchProgress(`[${i + 1}/${games.length}] ${game.name} 처리 중...`);
+        
+        let bggId = game.bggId;
+        let bggSubtype = 'boardgame';
+        
+        if (!bggId && game.boardlifeId) {
+          try {
+            const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            let blUrl = `/boardlife/game/${game.boardlifeId}`;
+            if (!isDev) {
+              blUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://boardlife.co.kr/game/${game.boardlifeId}`)}`;
+            }
+            
+            const blRes = await fetch(blUrl);
+            if (blRes.ok) {
+              let htmlText = '';
+              if (isDev) {
+                htmlText = await blRes.text();
+              } else {
+                const allOriginsData = await blRes.json();
+                htmlText = allOriginsData.contents;
+              }
+              
+              const bggMatch = htmlText.match(/boardgamegeek\.com\/boardgame\/(\d+)/i);
+              const bggExpMatch = htmlText.match(/boardgamegeek\.com\/boardgameexpansion\/(\d+)/i);
+              const bggAnyMatch = htmlText.match(/boardgamegeek\.com\/.*?\/(\d+)/i);
+
+              if (bggMatch) {
+                bggId = bggMatch[1];
+                bggSubtype = 'boardgame';
+              } else if (bggExpMatch) {
+                bggId = bggExpMatch[1];
+                bggSubtype = 'boardgameexpansion';
+              } else if (bggAnyMatch) {
+                bggId = bggAnyMatch[1];
+                if (htmlText.includes('boardgameexpansion')) {
+                  bggSubtype = 'boardgameexpansion';
+                }
+              }
+            }
+          } catch (blErr) {
+            console.error(`${game.name} 보드라이프 BGG ID 추출 실패:`, blErr);
+          }
+        }
+        
+        if (bggId) {
+          try {
+            const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            let bggUrl = `/bgg-api/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
+            if (!isDev) {
+              const targetBggUrl = `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
+              bggUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetBggUrl)}`;
+            }
+
+            const bggRes = await fetch(bggUrl, isDev ? { headers: { 'Accept': 'application/json' } } : {});
+            if (bggRes.ok) {
+              let bggData;
+              if (isDev) {
+                bggData = await bggRes.json();
+              } else {
+                const allOriginsData = await bggRes.json();
+                bggData = JSON.parse(allOriginsData.contents);
+              }
+              
+              const item = bggData?.item;
+              if (item && item.description) {
+                const rawDesc = item.description;
+                const docParser = new DOMParser().parseFromString(rawDesc, "text/html");
+                const cleanDesc = docParser.documentElement.textContent;
+                
+                setBatchProgress(`[${i + 1}/${games.length}] ${game.name} 설명 번역 중...`);
+                const translated = await translateToKorean(cleanDesc);
+                
+                if (translated && translated.length > 50) {
+                  await updateDoc(doc(db, "games", game.docId), {
+                    description: translated,
+                    bggId: bggId
+                  });
+                  setBatchProgress(`[${i + 1}/${games.length}] ${game.name} 업데이트 성공`);
+                }
+              }
+            }
+          } catch (bggErr) {
+            console.error(`${game.name} BGG 소개 업데이트 실패:`, bggErr);
+          }
+        } else {
+          setBatchProgress(`[${i + 1}/${games.length}] ${game.name} BGG ID 없음`);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+      
+      setBatchProgress('모든 게임의 소개글 일괄 업데이트 완료!');
+      alert('일괄 업데이트가 완료되었습니다.');
+    } catch (err) {
+      console.error("일괄 업데이트 실패:", err);
+      setError("일괄 업데이트 실패: " + err.message);
+    } finally {
+      setBatchLoading(false);
     }
   };
 
@@ -393,6 +615,31 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
             </button>
           </div>
         </form>
+
+        {/* Batch Update Section */}
+        <div style={{ padding: '0 20px 20px 20px', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', lineHeight: '1.4' }}>
+            ⚠️ 이미 컬렉션에 등록된 모든 게임의 소개글을 BGG에서 다시 가져와 한글로 일괄 업데이트합니다. (게임당 약 3~5초가 소요됩니다.)
+          </p>
+          <button 
+            type="button" 
+            onClick={handleBatchUpdate} 
+            disabled={loading || batchLoading} 
+            style={{ 
+              width: '100%', padding: '10px', background: 'var(--bg-app)', 
+              border: '1px solid var(--border-subtle)', borderRadius: '10px', 
+              color: 'var(--text-primary)', cursor: 'pointer', fontSize: '13px', 
+              fontWeight: '700', transition: 'all 0.2s' 
+            }}
+          >
+            {batchLoading ? '일괄 업데이트 진행 중...' : '기존 게임 소개글 일괄 업데이트'}
+          </button>
+          {batchProgress && (
+            <div style={{ fontSize: '11px', color: 'var(--accent-primary)', fontFamily: 'monospace', background: 'var(--bg-app)', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+              {batchProgress}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

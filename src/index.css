@@ -263,3 +263,74 @@ body {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* ─────────────────────────────────────────
+   Mobile Responsive & Component Styles
+───────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  /* Header */
+  .header-container {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 16px;
+    padding: 12px 0 !important;
+  }
+  .header-container > div {
+    justify-content: space-between;
+  }
+  
+  /* FilterBar */
+  .filter-bar {
+    padding: 16px 12px !important;
+    gap: 12px !important;
+  }
+  .filter-row-1 {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 16px !important;
+  }
+  .filter-row-1 > div {
+    flex-direction: column;
+    align-items: flex-start !important;
+    width: 100%;
+  }
+  .filter-divider {
+    display: none !important;
+  }
+  .filter-row-2 {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .filter-row-2 > div:first-child {
+    max-width: none !important;
+  }
+  .filter-row-2 select {
+    width: 100% !important;
+  }
+  .filter-row-2 > div:last-child {
+    margin-left: 0 !important;
+    justify-content: space-between;
+  }
+
+  /* GameDetail */
+  .detail-modal {
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    height: 100vh;
+  }
+  .detail-content {
+    padding: 16px !important;
+  }
+  .detail-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+  
+  /* Layout */
+  .grid-layout {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+}

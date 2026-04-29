@@ -20,7 +20,7 @@ function GameCard({ game, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="glass"
+      className="glass game-card"
       style={{
         borderRadius: '20px',
         overflow: 'hidden',
@@ -30,14 +30,18 @@ function GameCard({ game, onClick }) {
         transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-        e.currentTarget.style.boxShadow = 'var(--shadow-xl), 0 0 20px var(--accent-glow)';
-        e.currentTarget.style.borderColor = 'var(--accent-primary)';
+        if (window.innerWidth > 768) {
+          e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+          e.currentTarget.style.boxShadow = 'var(--shadow-xl), 0 0 20px var(--accent-glow)';
+          e.currentTarget.style.borderColor = 'var(--accent-primary)';
+        }
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.transform = 'translateY(0) scale(1)';
-        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-        e.currentTarget.style.borderColor = 'var(--border-subtle)';
+        if (window.innerWidth > 768) {
+          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+          e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+          e.currentTarget.style.borderColor = 'var(--border-subtle)';
+        }
       }}
     >
       {/* Image / Placeholder */}

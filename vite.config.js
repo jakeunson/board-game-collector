@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => {
               if (env.VITE_BGG_TOKEN) {
                 proxyReq.setHeader('Authorization', `Bearer ${env.VITE_BGG_TOKEN}`);
               }
+              proxyReq.setHeader('User-Agent', 'BoardGameCollectorApp/2.0');
             });
           },
         },
@@ -32,6 +33,12 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
           rewrite: (path) => path.replace(/^\/boardlife/, ''),
+        },
+        '/translate-api': {
+          target: 'https://translate.googleapis.com',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/translate-api/, ''),
         }
       }
     }

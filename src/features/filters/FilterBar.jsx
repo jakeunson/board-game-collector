@@ -64,7 +64,7 @@ export default function FilterBar() {
   } = useFilters();
 
   return (
-    <div className="glass" style={{
+    <div className="glass filter-bar" style={{
       borderRadius: '16px',
       padding: '16px',
       marginBottom: '24px',
@@ -73,7 +73,7 @@ export default function FilterBar() {
       gap: '16px',
     }}>
       {/* Row 1: Players + Difficulty */}
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className="filter-row-1" style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             인원
@@ -90,7 +90,7 @@ export default function FilterBar() {
           </div>
         </div>
 
-        <div style={{ width: '1px', height: '24px', background: 'var(--border-medium)' }} />
+        <div className="filter-divider" style={{ width: '1px', height: '24px', background: 'var(--border-medium)' }} />
 
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -109,7 +109,7 @@ export default function FilterBar() {
           </div>
         </div>
 
-        <div style={{ width: '1px', height: '24px', background: 'var(--border-medium)' }} />
+        <div className="filter-divider" style={{ width: '1px', height: '24px', background: 'var(--border-medium)' }} />
 
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -124,7 +124,7 @@ export default function FilterBar() {
       </div>
 
       {/* Row 2: Search + Category + Reset */}
-      <div style={{ 
+      <div className="filter-row-2" style={{ 
         display: 'flex', 
         gap: '12px', 
         alignItems: 'center', 

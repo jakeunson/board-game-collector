@@ -110,6 +110,7 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
   const [rentStartDate, setRentStartDate] = useState('');
   const [rentEndDate, setRentEndDate] = useState('');
   const [isSubmittingRent, setIsSubmittingRent] = useState(false);
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   useEffect(() => {
     if (game) {
@@ -277,7 +278,7 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
       }} />
 
       <div
-        className="animate-slide-up glass"
+        className="animate-slide-up glass detail-modal"
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: '800px', maxHeight: '95vh',
@@ -359,8 +360,8 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '270px 1fr', gap: '32px' }}>
+        <div className="detail-content" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+          <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: '270px 1fr', gap: '32px' }}>
 
             {/* Left Column: Image + Stats */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -571,12 +572,39 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                   game.description && (
                     <div>
                       <h3 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-tertiary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>게임 소개</h3>
-                      <p style={{
-                        lineHeight: '1.6', color: 'var(--text-secondary)', fontSize: '13px',
-                        display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                      }}>
+                      <p 
+                        onClick={() => game.description && game.description.length > 250 && setIsDescExpanded(!isDescExpanded)}
+                        style={{
+                          lineHeight: '1.6', 
+                          color: 'var(--text-secondary)', 
+                          fontSize: '13px',
+                          display: '-webkit-box', 
+                          WebkitLineClamp: isDescExpanded ? 'unset' : 6, 
+                          WebkitBoxOrient: 'vertical', 
+                          overflow: 'hidden',
+                          cursor: game.description && game.description.length > 250 ? 'pointer' : 'default',
+                          whiteSpace: 'pre-wrap'
+                        }}
+                      >
                         {game.description}
                       </p>
+                      {game.description && game.description.length > 250 && (
+                        <button 
+                          onClick={() => setIsDescExpanded(!isDescExpanded)}
+                          style={{
+                            background: 'none', 
+                            border: 'none', 
+                            color: 'var(--accent)', 
+                            fontSize: '12px', 
+                            fontWeight: '700', 
+                            cursor: 'pointer', 
+                            marginTop: '4px',
+                            padding: 0
+                          }}
+                        >
+                          {isDescExpanded ? '접기' : '더보기'}
+                        </button>
+                      )}
                     </div>
                   )
                 )}
@@ -780,7 +808,7 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
 
 
               {/* Delete Button */}
-              {!isEditing && (
+              {!isEditing && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
                 <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', paddingTop: '16px' }}>
                   <button
                     onClick={async () => {

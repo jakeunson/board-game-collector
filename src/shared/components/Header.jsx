@@ -8,7 +8,7 @@ export default function Header({ onOpenAddModal }) {
   const { gameCollection, loading } = useGames();
 
   return (
-    <header style={{
+    <header className="header-container" style={{
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
