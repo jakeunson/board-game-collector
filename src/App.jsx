@@ -19,7 +19,7 @@ import BggEnricher from './features/admin/BggEnricher';
 import AdminAuthModal from './features/admin/AdminAuthModal';
 import RentalManager from './features/admin/RentalManager';
 
-import './App.css';
+
 
 function AppContent() {
   const { loading, addGame, removeGame, updateGame } = useGames();

@@ -9,6 +9,14 @@
       "destination": "https://api.geekdo.com/:path*"
     },
     {
+      "source": "/xmlapi2/:path*",
+      "destination": "https://boardgamegeek.com/xmlapi2/:path*"
+    },
+    {
+      "source": "/translate-api/:path*",
+      "destination": "https://translate.googleapis.com/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
