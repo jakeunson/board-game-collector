@@ -22,7 +22,7 @@ import RentalManager from './features/admin/RentalManager';
 
 
 function AppContent() {
-  const { loading, addGame, removeGame, updateGame, isAdmin } = useGames();
+  const { loading, removeGame, updateGame, isAdmin } = useGames();
   const { filteredCollection, viewMode } = useFilters();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -114,6 +114,7 @@ function AppContent() {
       )}
       {selectedGame && createPortal(
         <GameDetail
+          key={selectedGame.id}
           game={selectedGame}
           onClose={() => setSelectedGame(null)}
           onDelete={removeGame}

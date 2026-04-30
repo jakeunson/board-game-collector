@@ -8,7 +8,10 @@ export function GameProvider({ children }) {
   const [gameCollection, setGameCollection] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(() => {
-    return localStorage.getItem('isAdminAuthenticated') === 'true';
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('isAdminAuthenticated') === 'true';
+    }
+    return false;
   });
 
   const setAdminAuthenticated = (value) => {

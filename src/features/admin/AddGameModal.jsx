@@ -102,6 +102,8 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
       let weight = '';
       let rating = '';
       let englishName = '';
+      let image = '';
+      let thumbnail = '';
 
       const bggMatch = htmlText.match(/boardgamegeek\.com\/boardgame\/(\d+)/i);
       const bggExpMatch = htmlText.match(/boardgamegeek\.com\/boardgameexpansion\/(\d+)/i);
