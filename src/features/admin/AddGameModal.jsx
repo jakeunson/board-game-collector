@@ -2,127 +2,13 @@ import React, { useState } from 'react';
 import { X, Loader2, Link, CheckCircle, AlertCircle } from 'lucide-react';
 import { collection, addDoc, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-
-const CATEGORY_MAP = {
-  'Deduction': '추리',
-  'Murder/Mystery': '미스터리',
-  'Puzzle': '퍼즐',
-  'Card Game': '카드게임',
-  'Fantasy': '판타지',
-  'Adventure': '모험',
-  'Exploration': '탐험',
-  'Economic': '경제',
-  'Fighting': '전투',
-  'Negotiation': '협상',
-  'Party Game': '파티게임',
-  'Bluffing': '블러핑',
-  'Strategy Games': '전략게임',
-  'Family Game': '가족게임',
-  'Thematic Games': '테마게임',
-  'Ancient': '고대',
-  'Animals': '동물',
-  'Abstract Strategy': '추상전략',
-  'Action / Dexterity': '액션/순발력',
-  'City Building': '도시건설',
-  'Civilization': '문명',
-  'Dice': '주사위',
-  'Medieval': '중세',
-  'Space Exploration': '우주탐험',
-  'Horror': '공포',
-  'Miniatures': '피규어',
-  'Science Fiction': 'SF',
-  'Zombies': '좀비'
-};
-
-const MECHANISM_MAP = {
-  'Cooperative Game': '협력',
-  'Storytelling': '스토리텔링',
-  'Hand Management': '핸드 관리',
-  'Grid Movement': '격자 이동',
-  'Area Majority / Influence': '영향력',
-  'Dice Rolling': '주사위 굴리기',
-  'Tile Placement': '타일 놓기',
-  'Drafting': '드래프트',
-  'Action Retrieval': '액션 회수',
-  'Variable Player Powers': '가변 능력',
-  'Deck, Bag, and Pool Building': '덱빌딩',
-  'Solo / Solitaire Game': '1인 전용',
-  'Campaign / Battle Card Driven': '캠페인',
-  'Worker Placement': '일꾼 놓기',
-  'Set Collection': '셋 컬렉션',
-  'Memory': '기억력',
-  'Pattern Building': '패턴 구축',
-  'Take That': '인터랙션',
-  'Voting': '투표',
-  'Push Your Luck': '운 시험',
-  'Simultaneous Action Selection': '동시 행동 선택'
-};
-
-const translateText = (text, map) => {
-  if (!text) return '';
-  return text.split(',').map(item => {
-    const trimmed = item.trim();
-    return map[trimmed] || trimmed;
-  }).join(', ');
-};
-
-
-
-const splitIntoChunks = (text, maxLength = 1000) => {
-  const chunks = [];
-  let currentChunk = '';
-  
-  const sentences = text.split(/([.!?]\s+)/);
-  for (let i = 0; i < sentences.length; i++) {
-    const sentence = sentences[i];
-    if ((currentChunk + sentence).length > maxLength) {
-      if (currentChunk) chunks.push(currentChunk.trim());
-      currentChunk = sentence;
-    } else {
-      currentChunk += sentence;
-    }
-  }
-  if (currentChunk) chunks.push(currentChunk.trim());
-  return chunks;
-};
-
-const translateToKorean = async (text) => {
-  if (!text) return '';
-  try {
-    const chunks = splitIntoChunks(text, 1000);
-    const translatedChunks = [];
-
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-    for (const chunk of chunks) {
-      const baseUrl = isDev ? '/translate-api' : 'https://translate.googleapis.com';
-      const url = `${baseUrl}/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(chunk)}`;
-      
-      try {
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data[0]) {
-            const translatedText = data[0].map(item => item[0]).join('');
-            translatedChunks.push(translatedText);
-          } else {
-            translatedChunks.push(chunk);
-          }
-        } else {
-          translatedChunks.push(chunk);
-        }
-      } catch (e) {
-        console.error("Translation error for chunk:", e);
-        translatedChunks.push(chunk);
-      }
-    }
-
-    return translatedChunks.join(' ');
-  } catch (err) {
-    console.error("Failed to translate:", err);
-    return text;
-  }
-};
+import { 
+  CATEGORY_MAP, 
+  MECHANISM_MAP, 
+  translateText, 
+  translateToKorean, 
+  extractDetailsFromHtml 
+} from '../../utils/gameDataExtractor';
 
 export default function AddGameModal({ onClose, onAddSuccess }) {
   const [url, setUrl] = useState('');
@@ -197,79 +83,18 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
 
       setStatusMessage('데이터 분석 중...');
 
-      // 2. JSON-LD 및 정규식 활용 데이터 추출
+      // 2. DOM 파싱 및 데이터 추출
+      const { year: blYear, category: blCategory, theme: blTheme, mechanisms: blMechanisms } = extractDetailsFromHtml(htmlText);
+      
       let name = '알 수 없는 게임';
       let minPlayers = '';
       let maxPlayers = '';
       let playingTime = '';
       let description = '';
-      let year = '';
-
-      // JSON-LD 추출 시도
-      const jsonLdMatch = htmlText.match(/<script type="application\/ld\+json">\s*(.*?)\s*<\/script>/is);
-      if (jsonLdMatch) {
-        try {
-          const jsonData = JSON.parse(jsonLdMatch[1]);
-          if (jsonData.name) name = jsonData.name;
-          if (jsonData.numberOfPlayers) {
-            minPlayers = parseInt(jsonData.numberOfPlayers.minValue) || '';
-            maxPlayers = parseInt(jsonData.numberOfPlayers.maxValue) || minPlayers;
-          }
-          if (jsonData.playTime) {
-            // 보드라이프 JSON-LD에서 playTime은 주로 최대 시간으로 쓰거나 범위임
-            playingTime = parseInt(jsonData.playTime.maxValue) || parseInt(jsonData.playTime.minValue) || '';
-          }
-        } catch (e) {
-          console.error("JSON-LD 파싱 실패", e);
-        }
-      }
-
-      // JSON-LD로 못 찾은 경우 정규식/DOM 사용 (Fallback)
-      if (name === '알 수 없는 게임') {
-        const titleMatch = htmlText.match(/<title>(.*?)<\/title>/i);
-        if (titleMatch) name = titleMatch[1].replace('보드게임 정보', '').trim();
-      }
-
-      // 설명 추출 (og:description)
-      const descMatch = htmlText.match(/<meta property="og:description" content="(.*?)"/i);
-      if (descMatch) description = descMatch[1].trim();
-
-      // 보드라이프 이미지 추출 (og:image)
-      let image = '';
-      let thumbnail = '';
-      const imageMatch = htmlText.match(/<meta property="og:image" content="(.*?)"/i);
-      if (imageMatch) {
-        image = imageMatch[1].trim();
-        thumbnail = image;
-      }
-
-      // 출시년도 (정규식)
-      const yearMatch = htmlText.match(/출시(?:년도)?\s*:\s*(\d{4})/i) || htmlText.match(/>\s*(\d{4})\s*</);
-      if (yearMatch) year = yearMatch[1];
-
-      let category = '';
-      let mechanisms = '';
-
-      // 보드라이프 키워드 기반 카테고리/진행방식 탐색 (우선순위)
-      const blCategories = [];
-      Object.values(CATEGORY_MAP).forEach(val => {
-        if (htmlText.includes(val) && !blCategories.includes(val)) {
-          blCategories.push(val);
-        }
-      });
-      if (blCategories.length > 0) {
-        category = blCategories.slice(0, 3).join(', ');
-      }
-
-      const blMechanisms = [];
-      Object.values(MECHANISM_MAP).forEach(val => {
-        if (htmlText.includes(val) && !blMechanisms.includes(val)) {
-          blMechanisms.push(val);
-        }
-      });
-      if (blMechanisms.length > 0) {
-        mechanisms = blMechanisms.slice(0, 4).join(', ');
-      }
+      let year = blYear;
+      let category = blCategory;
+      let theme = blTheme;
+      let mechanisms = blMechanisms;
 
       // 4. BGG ID 추출 및 데이터 보강
       let bggId = '';
@@ -319,7 +144,9 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
               if (item.name) englishName = item.name.trim();
               if (item.stats?.average) rating = parseFloat(item.stats.average).toFixed(1);
               if (item.stats?.avgweight) weight = parseFloat(item.stats.avgweight).toFixed(2);
+              if (item.yearpublished && !year) year = item.yearpublished;
               
+              // BGG 데이터는 보드라이프 데이터가 없을 때만 Fallback으로 사용
               if (!category && item.links?.boardgamecategory) {
                 const rawCats = item.links.boardgamecategory.map(l => l.name).slice(0, 3).join(', ');
                 category = translateText(rawCats, CATEGORY_MAP);
@@ -334,13 +161,12 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
                 thumbnail = item.images.thumb || image;
               }
 
-              // BGG JSON API의 description을 가져와 번역
               if (item.description) {
                 const rawDesc = item.description;
-                const doc = new DOMParser().parseFromString(rawDesc, "text/html");
-                const cleanDesc = doc.documentElement.textContent;
+                const d = new DOMParser().parseFromString(rawDesc, "text/html");
+                const cleanDesc = d.documentElement.textContent;
                 
-                setStatusMessage('BGG 설명을 한글로 번역 중 (약 5~10초 소요)...');
+                setStatusMessage('BGG 설명을 한글로 번역 중...');
                 const translated = await translateToKorean(cleanDesc);
                 if (translated && translated.length > 50) {
                   description = translated;
@@ -353,7 +179,7 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
         }
       }
 
-      // BGG ID를 못 찾았거나 API가 실패했을 경우 보드라이프 내 평점/난이도 정규식 시도
+      // Fallback: 정규식 평점/난이도/영문명
       if (!rating) {
         const ratingMatch = htmlText.match(/평점\s*:?\s*(\d+(\.\d+)?)/i) || htmlText.match(/(\d+(\.\d+)?)\s*점/);
         if (ratingMatch) rating = parseFloat(ratingMatch[1]).toFixed(1);
@@ -367,7 +193,6 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
         if (engMatch) englishName = engMatch[0].trim();
       }
 
-      // 5. 확장판 식별 로직
       let type = 'base';
       if (name.includes('확장') || htmlText.includes('확장판') || htmlText.includes('본판 필요')) {
         type = 'expansion';
@@ -389,7 +214,7 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
         weight: weight ? Number(weight) : '',
         rating: rating ? Number(rating) : '',
         category,
-        theme: category, // 테마 데이터가 따로 없을 경우 카테고리를 테마로도 함께 채워 검색 활용
+        theme,
         mechanisms,
         description,
         image: image,
@@ -418,6 +243,100 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
       setError('게임 추가 중 오류가 발생했습니다: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBatchDetailUpdate = async () => {
+    if (!window.confirm('이미 등록된 모든 게임의 세부 정보(출시년도, 카테고리, 테마, 진행방식)를 보드라이프에서 다시 가져와 일괄 업데이트하시겠습니까? (시간이 소요됩니다)')) {
+      return;
+    }
+
+    setBatchLoading(true);
+    setError('');
+    
+    try {
+      setBatchProgress('Firestore에서 게임 목록 가져오는 중...');
+      const querySnapshot = await getDocs(collection(db, "games"));
+      const games = querySnapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+      
+      setBatchProgress(`총 ${games.length}개의 게임 발견. 세부 정보 업데이트를 시작합니다.`);
+      
+      for (let i = 0; i < games.length; i++) {
+        const game = games[i];
+        setBatchProgress(`[${i + 1}/${games.length}] ${game.name} 처리 중...`);
+        
+        if (game.boardlifeId) {
+          try {
+            const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            let blUrl = `/boardlife/game/${game.boardlifeId}`;
+            if (!isDev) {
+              blUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://boardlife.co.kr/game/${game.boardlifeId}`)}`;
+            }
+            
+            const blRes = await fetch(blUrl);
+            if (blRes.ok) {
+              let htmlText = '';
+              if (isDev) {
+                htmlText = await blRes.text();
+              } else {
+                const allOriginsData = await blRes.json();
+                htmlText = allOriginsData.contents;
+              }
+              
+              const { year, category, theme, mechanisms } = extractDetailsFromHtml(htmlText);
+              
+              const updateData = {
+                year: year || game.year || '',
+                category: category || '',
+                theme: theme || '',
+                mechanisms: mechanisms || ''
+              };
+
+              // BGG Fallback for Year
+              if (!updateData.year && game.bggId) {
+                try {
+                  const bggSubtype = game.type === 'expansion' ? 'boardgameexpansion' : 'boardgame';
+                  let bggUrl = `/bgg-api/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${game.bggId}&ajax=1&nosession=1`;
+                  if (!isDev) {
+                    const targetBggUrl = `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${game.bggId}&ajax=1&nosession=1`;
+                    bggUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetBggUrl)}`;
+                  }
+                  
+                  const bggRes = await fetch(bggUrl);
+                  if (bggRes.ok) {
+                    let bggData;
+                    if (isDev) bggData = await bggRes.json();
+                    else {
+                      const aoData = await bggRes.json();
+                      bggData = JSON.parse(aoData.contents);
+                    }
+                    if (bggData?.item?.yearpublished) {
+                      updateData.year = bggData.item.yearpublished;
+                    }
+                  }
+                } catch (bggErr) {
+                  console.error("BGG Year Fallback 실패:", bggErr);
+                }
+              }
+
+              await updateDoc(doc(db, "games", game.docId), updateData);
+              setBatchProgress(`[${i + 1}/${games.length}] ${game.name} 업데이트 성공`);
+            }
+          } catch (blErr) {
+            console.error(`${game.name} 세부 정보 업데이트 실패:`, blErr);
+          }
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      setBatchProgress('모든 게임의 세부 정보 일괄 업데이트 완료!');
+      alert('일괄 업데이트가 완료되었습니다.');
+    } catch (err) {
+      console.error("일괄 업데이트 실패:", err);
+      setError("일괄 업데이트 실패: " + err.message);
+    } finally {
+      setBatchLoading(false);
     }
   };
 
@@ -634,6 +553,21 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
           >
             {batchLoading ? '일괄 업데이트 진행 중...' : '기존 게임 소개글 일괄 업데이트'}
           </button>
+          
+          <button 
+            type="button" 
+            onClick={handleBatchDetailUpdate} 
+            disabled={loading || batchLoading} 
+            style={{ 
+              width: '100%', padding: '10px', background: 'var(--bg-app)', 
+              border: '1px solid var(--border-subtle)', borderRadius: '10px', 
+              color: 'var(--text-primary)', cursor: 'pointer', fontSize: '13px', 
+              fontWeight: '700', transition: 'all 0.2s' 
+            }}
+          >
+            {batchLoading ? '일괄 업데이트 진행 중...' : '기존 게임 세부 정보 일괄 업데이트 (카테고리/테마 등)'}
+          </button>
+
           {batchProgress && (
             <div style={{ fontSize: '11px', color: 'var(--accent-primary)', fontFamily: 'monospace', background: 'var(--bg-app)', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
               {batchProgress}

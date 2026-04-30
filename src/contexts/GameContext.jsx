@@ -7,11 +7,18 @@ const GameContext = createContext();
 export function GameProvider({ children }) {
   const [gameCollection, setGameCollection] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    return localStorage.getItem('isAdminAuthenticated') === 'true';
+  });
+
+  const setAdminAuthenticated = (value) => {
+    setIsAdmin(value);
+    localStorage.setItem('isAdminAuthenticated', value);
+  };
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "games"), (snapshot) => {
       const gamesData = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
-      // Sort by name by default
       gamesData.sort((a, b) => a.name.localeCompare(b.name));
       setGameCollection(gamesData);
       setLoading(false);
@@ -55,6 +62,8 @@ export function GameProvider({ children }) {
     <GameContext.Provider value={{
       gameCollection,
       loading,
+      isAdmin,
+      setAdminAuthenticated,
       addGame,
       removeGame,
       updateGame

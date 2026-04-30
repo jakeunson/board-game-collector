@@ -4,6 +4,10 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { addDoc, collection } from 'firebase/firestore';
 import { storage, db } from '../../firebase';
 import { useGames } from '../../contexts/GameContext';
+import { 
+  extractDetailsFromHtml, 
+  translateToKorean 
+} from '../../utils/gameDataExtractor';
 import noImage from '../../assets/no-image.jpg';
 
 function StatCard({ icon, label, value, color }) {
@@ -96,10 +100,11 @@ function LinkButton({ href, icon, label, color }) {
 }
 
 export default function GameDetail({ game: initialGame, onClose, onDelete, onUpdate, onGameChange }) {
-  const { gameCollection, updateGame } = useGames();
+  const { gameCollection, updateGame, isAdmin } = useGames();
   const game = gameCollection.find(g => g.id === initialGame.id) || initialGame;
 
   const [isUploading, setIsUploading] = useState(false);
+  const [isFetchingInfo, setIsFetchingInfo] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [selectedExpansions, setSelectedExpansions] = useState([]);
@@ -219,6 +224,98 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
     }
   };
 
+  const handleFetchGameInfo = async () => {
+    if (!game.boardlifeId) {
+      alert('보드라이프 ID가 등록되어 있지 않습니다.');
+      return;
+    }
+
+    setIsFetchingInfo(true);
+    try {
+      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      let htmlText = '';
+      const targetUrl = `https://boardlife.co.kr/game/${game.boardlifeId}`;
+
+      if (isDev) {
+        const response = await fetch(`/boardlife/game/${game.boardlifeId}`);
+        if (response.ok) htmlText = await response.text();
+      } else {
+        try {
+          const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+          if (response.ok) {
+            const data = await response.json();
+            htmlText = data.contents;
+          }
+        } catch (e) {
+          const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
+          if (response.ok) htmlText = await response.text();
+        }
+      }
+
+      if (htmlText) {
+        const { year, category, theme, mechanisms } = extractDetailsFromHtml(htmlText);
+        
+        // 폼 데이터 업데이트
+        setEditData(prev => ({
+          ...prev,
+          year: year || prev.year,
+          category: category || prev.category,
+          theme: theme || prev.theme,
+          mechanisms: mechanisms || prev.mechanisms
+        }));
+
+        // BGG에서 설명 가져오기
+        let bggId = game.bggId;
+        if (!bggId) {
+          const bggMatch = htmlText.match(/boardgamegeek\.com\/boardgame\/(\d+)/i);
+          if (bggMatch) bggId = bggMatch[1];
+        }
+
+        if (bggId) {
+          const bggSubtype = game.type === 'expansion' ? 'boardgameexpansion' : 'boardgame';
+          let bggUrl = `/bgg-api/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
+          if (!isDev) {
+            const targetBggUrl = `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
+            bggUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetBggUrl)}`;
+          }
+
+          const bggRes = await fetch(bggUrl);
+          if (bggRes.ok) {
+            let bggData;
+            if (isDev) bggData = await bggRes.json();
+            else {
+              const aoData = await bggRes.json();
+              bggData = JSON.parse(aoData.contents);
+            }
+            
+            const item = bggData?.item;
+            if (item) {
+              if (item.description) {
+                const docParser = new DOMParser().parseFromString(item.description, "text/html");
+                const cleanDesc = docParser.documentElement.textContent;
+                const translated = await translateToKorean(cleanDesc);
+                if (translated) {
+                  setEditData(prev => ({ ...prev, description: translated }));
+                }
+              }
+              if (item.yearpublished && !year) {
+                setEditData(prev => ({ ...prev, year: item.yearpublished }));
+              }
+            }
+          }
+        }
+        alert('데이터를 성공적으로 불러왔습니다. 내용을 확인하신 후 [저장]을 눌러주세요.');
+      } else {
+        alert('데이터를 가져오는데 실패했습니다.');
+      }
+    } catch (err) {
+      console.error("Fetch Info Error:", err);
+      alert('오류가 발생했습니다: ' + err.message);
+    } finally {
+      setIsFetchingInfo(false);
+    }
+  };
+
   const handleRentSubmit = async (e) => {
     e.preventDefault();
     if (!rentEmail || !rentStartDate || !rentEndDate) {
@@ -334,7 +431,7 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                 </button>
               </>
             ) : (
-              (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
+              (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || isAdmin) && (
                 <button
                   onClick={() => setIsEditing(true)}
                   style={{
@@ -521,6 +618,26 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                   </>
                 )}
               </div>
+
+              {/* Individual Game Data Fetch Button */}
+              {isEditing && (
+                <button
+                  onClick={handleFetchGameInfo}
+                  disabled={isFetchingInfo}
+                  style={{
+                    width: '100%', padding: '10px', background: 'var(--bg-app)',
+                    border: '1px solid var(--accent-primary)', borderRadius: '10px',
+                    color: 'var(--accent-primary)', cursor: 'pointer', fontSize: '12px',
+                    fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                  }}
+                >
+                  {isFetchingInfo ? (
+                    <><Loader2 size={14} className="animate-spin" /> 정보를 가져오는 중...</>
+                  ) : (
+                    <><Search size={14} /> 보드라이프/BGG에서 정보 다시 불러오기</>
+                  )}
+                </button>
+              )}
             </div>
 
             {/* Right Column: Details */}
@@ -810,7 +927,7 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
 
 
               {/* Delete Button */}
-              {!isEditing && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
+              {!isEditing && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || isAdmin) && (
                 <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', paddingTop: '16px' }}>
                   <button
                     onClick={async () => {

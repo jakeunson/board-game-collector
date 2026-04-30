@@ -22,20 +22,30 @@ import RentalManager from './features/admin/RentalManager';
 
 
 function AppContent() {
-  const { loading, addGame, removeGame, updateGame } = useGames();
+  const { loading, addGame, removeGame, updateGame, isAdmin } = useGames();
   const { filteredCollection, viewMode } = useFilters();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [showEnricher, setShowEnricher] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authCallback, setAuthCallback] = useState(null);
   const [showRentalManager, setShowRentalManager] = useState(false);
+
+  const handleAdminAction = (action) => {
+    if (isAdmin || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      action();
+    } else {
+      setAuthCallback(() => action);
+      setShowAuthModal(true);
+    }
+  };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div className="container">
 
-        <Header onOpenAddModal={() => setIsModalOpen(true)} />
+        <Header onOpenAddModal={() => handleAdminAction(() => setIsModalOpen(true))} />
 
         <FilterBar />
 
@@ -67,7 +77,10 @@ function AppContent() {
           </div>
         )}
 
-        <Footer onOpenAdmin={() => setShowEnricher(true)} onOpenRental={() => setShowAuthModal(true)} />
+        <Footer 
+          onOpenAdmin={() => handleAdminAction(() => setShowEnricher(true))} 
+          onOpenRental={() => handleAdminAction(() => setShowRentalManager(true))} 
+        />
       </div>
 
       {/* Modals via Portals */}
@@ -86,7 +99,13 @@ function AppContent() {
         document.body
       )}
       {showAuthModal && createPortal(
-        <AdminAuthModal onClose={() => setShowAuthModal(false)} onSuccess={() => setShowRentalManager(true)} />,
+        <AdminAuthModal 
+          onClose={() => setShowAuthModal(false)} 
+          onSuccess={() => {
+            if (authCallback) authCallback();
+            setAuthCallback(null);
+          }} 
+        />,
         document.body
       )}
       {showRentalManager && createPortal(

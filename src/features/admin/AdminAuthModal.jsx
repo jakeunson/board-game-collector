@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { X, Lock } from 'lucide-react';
+import { useGames } from '../../contexts/GameContext';
 
 export default function AdminAuthModal({ onClose, onSuccess }) {
+  const { setAdminAuthenticated } = useGames();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -10,7 +12,8 @@ export default function AdminAuthModal({ onClose, onSuccess }) {
     const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || '1234';
     
     if (password === correctPassword) {
-      onSuccess();
+      setAdminAuthenticated(true);
+      if (onSuccess) onSuccess();
       onClose();
     } else {
       setError('비밀번호가 일치하지 않습니다.');
