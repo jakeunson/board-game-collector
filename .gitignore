@@ -26,4 +26,4 @@ dist-ssr
 *.sw?
 
 # Utility Scripts (May contain secrets)
-src/utils/*.js
+
