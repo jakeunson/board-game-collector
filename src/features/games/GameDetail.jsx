@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useRef, useEffect } from 'react';
 import { Users, Clock, Star, Brain, X, Trash2, ExternalLink, Video, Search, Globe, Calendar, Layers, Puzzle, Camera, Loader2, Edit2, Save, Undo } from 'lucide-react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -118,7 +119,7 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   useEffect(() => {
-    if (game) {
+    if (game && isEditing) {
       setEditData({
         name: game.name || '',
         englishName: game.englishName || '',
@@ -137,15 +138,13 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
         year: game.year || ''
       });
 
-      if (isEditing) {
-        setSelectedExpansions(
-          gameCollection
-            .filter(g => g.parentGameId === game.id)
-            .map(g => g.id)
-        );
-      }
+      setSelectedExpansions(
+        gameCollection
+          .filter(g => g.parentGameId === game.id)
+          .map(g => g.id)
+      );
     }
-  }, [game, isEditing]);
+  }, [game, isEditing, gameCollection]);
 
   if (!game) return null;
 
@@ -246,7 +245,7 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
             const data = await response.json();
             htmlText = data.contents;
           }
-        } catch (e) {
+        } catch {
           const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
           if (response.ok) htmlText = await response.text();
         }
