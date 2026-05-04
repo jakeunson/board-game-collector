@@ -98,9 +98,26 @@ function GameListItem({ game, onClick }) {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
-            marginBottom: '4px'
+            marginBottom: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
           }} title={game.name}>
-            {game.name}
+            {game.isHidden && (
+              <span style={{
+                background: 'rgba(244, 63, 94, 0.15)',
+                color: '#f43f5e',
+                padding: '1px 6px',
+                borderRadius: '6px',
+                fontSize: '10px',
+                fontWeight: '800',
+                border: '1px solid rgba(244, 63, 94, 0.3)',
+                flexShrink: 0
+              }}>
+                🔒 비공개
+              </span>
+            )}
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{game.name}</span>
           </h4>
           <div style={{ display: 'flex', gap: '8px' }}>
             {game.category && (

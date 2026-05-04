@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const GameContext = createContext();
@@ -14,11 +14,42 @@ export function GameProvider({ children }) {
     }
     return false;
   });
+  const [adminPassword, setAdminPassword] = useState(null); // null = 아직 로드 안됨
 
   const setAdminAuthenticated = (value) => {
     setIsAdmin(value);
-    localStorage.setItem('isAdminAuthenticated', value);
+    localStorage.setItem('isAdminAuthenticated', String(value));
   };
+
+  const logout = () => {
+    setIsAdmin(false);
+    localStorage.removeItem('isAdminAuthenticated');
+  };
+
+  const changeAdminPassword = async (newPassword) => {
+    await setDoc(doc(db, 'adminConfig', 'settings'), { password: newPassword }, { merge: true });
+    setAdminPassword(newPassword);
+  };
+
+  // Firestore에서 관리자 비밀번호 로드
+  useEffect(() => {
+    const loadAdminPassword = async () => {
+      try {
+        const configDoc = await getDoc(doc(db, 'adminConfig', 'settings'));
+        if (configDoc.exists() && configDoc.data().password) {
+          setAdminPassword(configDoc.data().password);
+        } else {
+          // Firestore에 비밀번호가 없으면 환경변수 fallback
+          const fallback = import.meta.env.VITE_ADMIN_PASSWORD || '1234';
+          setAdminPassword(fallback);
+        }
+      } catch (error) {
+        console.error('관리자 비밀번호 로드 실패:', error);
+        setAdminPassword(import.meta.env.VITE_ADMIN_PASSWORD || '1234');
+      }
+    };
+    loadAdminPassword();
+  }, []);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "games"), (snapshot) => {
@@ -67,7 +98,10 @@ export function GameProvider({ children }) {
       gameCollection,
       loading,
       isAdmin,
+      adminPassword,
       setAdminAuthenticated,
+      logout,
+      changeAdminPassword,
       addGame,
       removeGame,
       updateGame

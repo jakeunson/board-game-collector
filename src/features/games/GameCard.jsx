@@ -64,6 +64,24 @@ function GameCard({ game, onClick }) {
             확장
           </span>
         )}
+        {game.isHidden && (
+          <span style={{
+            position: 'absolute',
+            top: '12px',
+            right: game.type === 'expansion' ? '56px' : '12px',
+            background: 'rgba(244, 63, 94, 0.95)',
+            color: '#ffffff',
+            fontSize: '11px',
+            fontWeight: '800',
+            padding: '4px 8px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+            zIndex: 10,
+            backdropFilter: 'blur(4px)',
+          }}>
+            🔒 비공개
+          </span>
+        )}
         {game.isRented && (
           <span style={{
             position: 'absolute',

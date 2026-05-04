@@ -5,7 +5,7 @@ import { useGames } from './GameContext';
 const FilterContext = createContext();
 
 export function FilterProvider({ children }) {
-  const { gameCollection } = useGames();
+  const { gameCollection, isAdmin } = useGames();
   const [filters, setFilters] = useState({ search: '', players: '', difficulty: '', category: '', showBaseOnly: false });
   const [viewMode, setViewMode] = useState('grid');
 
@@ -17,6 +17,11 @@ export function FilterProvider({ children }) {
 
   const filteredCollection = useMemo(() => {
     const filtered = gameCollection.filter(game => {
+      // 비관리자이면서 비공개 처리된 게임은 목록에서 완전히 제외
+      if (!isAdmin && game.isHidden) {
+        return false;
+      }
+      
       if (filters.search && !game.name.toLowerCase().includes(filters.search.toLowerCase())) {
         return false;
       }

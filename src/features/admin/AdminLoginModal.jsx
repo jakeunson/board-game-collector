@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { X, Lock } from 'lucide-react';
+import { X, LogIn } from 'lucide-react';
 import { useGames } from '../../contexts/GameContext';
 
-export default function AdminAuthModal({ onClose, onSuccess }) {
+export default function AdminLoginModal({ onClose }) {
   const { setAdminAuthenticated, adminPassword } = useGames();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -10,7 +10,6 @@ export default function AdminAuthModal({ onClose, onSuccess }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // adminPassword가 아직 로딩 중인 경우 처리 (옵션)
     if (adminPassword === null) {
         setError('비밀번호 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
         return;
@@ -18,7 +17,6 @@ export default function AdminAuthModal({ onClose, onSuccess }) {
 
     if (password === adminPassword) {
       setAdminAuthenticated(true);
-      if (onSuccess) onSuccess();
       onClose();
     } else {
       setError('비밀번호가 일치하지 않습니다.');
@@ -40,8 +38,8 @@ export default function AdminAuthModal({ onClose, onSuccess }) {
           alignItems: 'center', borderBottom: '1px solid var(--border-subtle)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Lock size={18} style={{ color: 'var(--accent-primary)' }} />
-            <h3 style={{ fontSize: '16px', fontWeight: '800' }}>관리자 인증</h3>
+            <LogIn size={18} style={{ color: 'var(--accent-primary)' }} />
+            <h3 style={{ fontSize: '16px', fontWeight: '800' }}>관리자 로그인</h3>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
             <X size={20} />
@@ -67,7 +65,7 @@ export default function AdminAuthModal({ onClose, onSuccess }) {
           </div>
 
           <button type="submit" className="btn-primary" style={{ padding: '12px', fontSize: '15px', fontWeight: '700' }}>
-            인증하기
+            로그인
           </button>
         </form>
       </div>

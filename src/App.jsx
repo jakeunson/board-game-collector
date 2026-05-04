@@ -18,6 +18,8 @@ import AddGameModal from './features/admin/AddGameModal';
 import BggEnricher from './features/admin/BggEnricher';
 import AdminAuthModal from './features/admin/AdminAuthModal';
 import RentalManager from './features/admin/RentalManager';
+import AdminLoginModal from './features/admin/AdminLoginModal';
+import ChangePasswordModal from './features/admin/ChangePasswordModal';
 
 
 
@@ -31,9 +33,11 @@ function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authCallback, setAuthCallback] = useState(null);
   const [showRentalManager, setShowRentalManager] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   const handleAdminAction = (action) => {
-    if (isAdmin || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    if (isAdmin) {
       action();
     } else {
       setAuthCallback(() => action);
@@ -78,8 +82,10 @@ function AppContent() {
         )}
 
         <Footer 
-          onOpenAdmin={() => handleAdminAction(() => setShowEnricher(true))} 
-          onOpenRental={() => handleAdminAction(() => setShowRentalManager(true))} 
+          onOpenAdmin={() => setShowEnricher(true)} 
+          onOpenRental={() => setShowRentalManager(true)} 
+          onOpenLogin={() => setShowLoginModal(true)}
+          onOpenChangePassword={() => setShowChangePasswordModal(true)}
         />
       </div>
 
@@ -121,6 +127,14 @@ function AppContent() {
           onUpdate={updateGame}
           onGameChange={setSelectedGame}
         />,
+        document.body
+      )}
+      {showLoginModal && createPortal(
+        <AdminLoginModal onClose={() => setShowLoginModal(false)} />,
+        document.body
+      )}
+      {showChangePasswordModal && createPortal(
+        <ChangePasswordModal onClose={() => setShowChangePasswordModal(false)} />,
         document.body
       )}
     </div>

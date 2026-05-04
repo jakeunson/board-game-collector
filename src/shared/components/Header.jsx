@@ -70,7 +70,7 @@ export default function Header({ onOpenAddModal }) {
         >
           {theme === 'light' ? <Moon size={isMobile ? 16 : 18} /> : <Sun size={isMobile ? 16 : 18} />}
         </button>
-        {(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || isAdmin) && (
+        {isAdmin && (
           <button className="btn-primary" onClick={onOpenAddModal} style={{ padding: isMobile ? '6px 12px' : '10px 20px', fontSize: isMobile ? '12px' : '14px' }}>
             {isMobile ? '+ 추가' : '+ URL로 게임 추가'}
           </button>

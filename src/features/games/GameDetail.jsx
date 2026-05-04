@@ -113,8 +113,9 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
 
   const [showRentForm, setShowRentForm] = useState(false);
   const [rentEmail, setRentEmail] = useState('');
-  const [rentStartDate, setRentStartDate] = useState('');
-  const [rentEndDate, setRentEndDate] = useState('');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [rentStartDate, setRentStartDate] = useState(todayStr);
+  const [rentEndDate, setRentEndDate] = useState(todayStr);
   const [isSubmittingRent, setIsSubmittingRent] = useState(false);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
@@ -135,7 +136,8 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
         bggId: game.bggId || '',
         boardlifeId: game.boardlifeId || '',
         type: game.type || 'base',
-        year: game.year || ''
+        year: game.year || '',
+        isHidden: game.isHidden || false
       });
 
       setSelectedExpansions(
@@ -199,7 +201,8 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
         bggId: editData.bggId,
         boardlifeId: editData.boardlifeId,
         type: editData.type,
-        year: editData.year
+        year: editData.year,
+        isHidden: editData.isHidden
       };
 
       await onUpdate(game.id, updatedFields);
@@ -335,8 +338,8 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
       alert('대여 신청이 완료되었습니다.');
       setShowRentForm(false);
       setRentEmail('');
-      setRentStartDate('');
-      setRentEndDate('');
+      setRentStartDate(todayStr);
+      setRentEndDate(todayStr);
     } catch (error) {
       console.error('Failed to submit rent request:', error);
       alert('대여 신청 중 오류가 발생했습니다.');
@@ -488,14 +491,14 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                             <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>이메일</label>
                             <input type="email" required value={rentEmail} onChange={e => setRentEmail(e.target.value)} placeholder="example@email.com" style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px' }} />
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            <div style={{ minWidth: 0 }}>
                               <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>대여 시작일</label>
-                              <input type="date" required value={rentStartDate} onChange={e => setRentStartDate(e.target.value)} onClick={(e) => e.target.showPicker()} style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px', cursor: 'pointer' }} />
+                              <input type="date" required value={rentStartDate} onChange={e => setRentStartDate(e.target.value)} onClick={(e) => e.target.showPicker()} style={{ width: '100%', boxSizing: 'border-box', minWidth: 0, padding: '8px 6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px', cursor: 'pointer', fontSize: '12px' }} />
                             </div>
-                            <div>
+                            <div style={{ minWidth: 0 }}>
                               <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>반납 예정일</label>
-                              <input type="date" required value={rentEndDate} onChange={e => setRentEndDate(e.target.value)} onClick={(e) => e.target.showPicker()} style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px', cursor: 'pointer' }} />
+                              <input type="date" required value={rentEndDate} onChange={e => setRentEndDate(e.target.value)} onClick={(e) => e.target.showPicker()} style={{ width: '100%', boxSizing: 'border-box', minWidth: 0, padding: '8px 6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px', cursor: 'pointer', fontSize: '12px' }} />
                             </div>
                           </div>
                           <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
@@ -655,7 +658,20 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                   </div>
                 ) : (
                   <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                      {game.isHidden && (
+                        <span style={{
+                          background: 'rgba(244, 63, 94, 0.15)',
+                          color: '#f43f5e',
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: '800',
+                          border: '1px solid rgba(244, 63, 94, 0.3)'
+                        }}>
+                          🔒 비공개
+                        </span>
+                      )}
                       {game.category && game.category.split(',').slice(0, 3).map((cat, i) => (
                         <span key={i} className="badge badge-category" style={{ fontSize: '10px' }}>{cat.trim()}</span>
                       ))}
@@ -803,6 +819,23 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                       </div>
                     </div>
                   )}
+
+                  <div style={{ marginTop: '8px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={editData.isHidden} 
+                        onChange={e => handleInputChange('isHidden', e.target.checked)} 
+                        style={{ width: '16px', height: '16px', accentColor: '#f43f5e' }}
+                      />
+                      <span style={{ color: editData.isHidden ? '#f43f5e' : 'inherit' }}>
+                        🔒 관리자만 보기 (비공개)
+                      </span>
+                    </label>
+                    <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px', paddingLeft: '24px' }}>
+                      체크 시 비로그인 사용자의 목록 및 검색 결과에서 제외됩니다.
+                    </p>
+                  </div>
                 </div>
               )}
 
