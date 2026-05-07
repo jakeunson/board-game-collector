@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Loader2, Link, CheckCircle, AlertCircle } from 'lucide-react';
-import { collection, addDoc, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { 
   CATEGORY_MAP, 
@@ -9,6 +9,9 @@ import {
   translateToKorean, 
   extractDetailsFromHtml 
 } from '../../utils/gameDataExtractor';
+import { boardlifeService } from '../../utils/boardlifeService';
+import { bggService } from '../../utils/bggService';
+import { Dice5, Search } from 'lucide-react';
 
 export default function AddGameModal({ onClose, onAddSuccess }) {
   const [url, setUrl] = useState('');
@@ -53,193 +56,92 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
     setStatusMessage('보드라이프에서 데이터를 가져오는 중...');
 
     try {
-      // 1. 환경에 따른 프록시 분기 (개발 vs 배포)
-      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      let htmlText = '';
+      // 1. 보드라이프 HTML 데이터 수집 (BGG ID 추출용)
+      setStatusMessage('보드라이프 데이터 분석 중...');
+      const isDev = window.location.hostname === 'localhost' || 
+                    window.location.hostname === '127.0.0.1' || 
+                    window.location.hostname.startsWith('192.168.') || 
+                    window.location.hostname.startsWith('10.') ||
+                    window.location.hostname.endsWith('.local');
 
+      let htmlText = '';
       if (isDev) {
-        const proxyUrl = `/boardlife/game/${boardlifeId}`;
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('페이지를 불러오는데 실패했습니다.');
+        const response = await fetch(`/boardlife/game/${boardlifeId}`);
+        if (!response.ok) throw new Error('보드라이프 페이지를 불러오지 못했습니다.');
         htmlText = await response.text();
       } else {
-        // 배포 환경(Vercel 등)에서는 AllOrigins CORS 우회 프록시 활용 (실패 시 corsproxy.io로 전환)
         const targetUrl = `https://boardlife.co.kr/game/${boardlifeId}`;
-        try {
-          const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
-          if (response.ok) {
-            const data = await response.json();
-            htmlText = data.contents;
-          } else {
-            throw new Error('AllOrigins non-ok');
-          }
-        } catch (e) {
-          console.error("AllOrigins 실패, CorsProxy 시도", e);
-          const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
-          if (!response.ok) throw new Error('데이터를 가져오는데 완전히 실패했습니다.');
-          htmlText = await response.text();
-        }
+        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+        const data = await response.json();
+        htmlText = data.contents;
       }
 
-      setStatusMessage('데이터 분석 중...');
-
-      // 2. DOM 파싱 및 데이터 추출
-      const { year: blYear, category: blCategory, theme: blTheme, mechanisms: blMechanisms } = extractDetailsFromHtml(htmlText);
+      // 2. 보드라이프에서 기본 정보 추출 (보드라이프 데이터 우선 순위)
+      const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+      const bl = extractDetailsFromHtml(htmlText);
+      const blName = doc.querySelector('title')?.textContent?.split('|')[0]?.trim() || '';
       
-      let name = '알 수 없는 게임';
-      let minPlayers = '';
-      let maxPlayers = '';
-      let playingTime = '';
-      let description = '';
-      let year = blYear;
-      let category = blCategory;
-      let theme = blTheme;
-      let mechanisms = blMechanisms;
+      // BGG ID 및 타입 추출 강화
+      const bggMatch = htmlText.match(/boardgamegeek\.com\/(boardgame|boardgameexpansion|thing)\/(\d+)/i);
+      const bggInfo = bggMatch ? { 
+        type: bggMatch[1] === 'boardgameexpansion' ? 'boardgameexpansion' : 'boardgame', 
+        bggId: bggMatch[2] 
+      } : null;
 
-      // 4. BGG ID 추출 및 데이터 보강
-      let bggId = '';
-      let bggSubtype = 'boardgame';
-      let weight = '';
-      let rating = '';
-      let englishName = '';
-      let image = '';
-      let thumbnail = '';
-
-      const bggMatch = htmlText.match(/boardgamegeek\.com\/boardgame\/(\d+)/i);
-      const bggExpMatch = htmlText.match(/boardgamegeek\.com\/boardgameexpansion\/(\d+)/i);
-      const bggAnyMatch = htmlText.match(/boardgamegeek\.com\/.*?\/(\d+)/i);
-
-      if (bggMatch) {
-        bggId = bggMatch[1];
-        bggSubtype = 'boardgame';
-      } else if (bggExpMatch) {
-        bggId = bggExpMatch[1];
-        bggSubtype = 'boardgameexpansion';
-      } else if (bggAnyMatch) {
-        bggId = bggAnyMatch[1];
-        if (htmlText.includes('boardgameexpansion')) {
-          bggSubtype = 'boardgameexpansion';
-        }
+      if (!bggInfo) {
+        throw new Error('이 게임은 보드라이프에 BGG 링크가 연결되어 있지 않습니다.');
       }
 
-      if (bggId) {
-        setStatusMessage('BGG에서 상세 데이터 수집 중...');
-        try {
-          const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-          let bggUrl = `/bgg-api/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
-          if (!isDev) {
-            const targetBggUrl = `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
-            bggUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetBggUrl)}`;
-          }
+      // 3. BGG 상세 정보 수집 (보충용)
+      setStatusMessage('BGG에서 상세 정보 보충 중...');
+      const bggData = await bggService.getGameDetails(bggInfo.bggId, bggInfo.type);
+      
+      if (!bggData) throw new Error('BGG에서 데이터를 가져오지 못했습니다.');
 
-          const bggRes = await fetch(bggUrl, isDev ? { headers: { 'Accept': 'application/json' } } : {});
-          if (bggRes.ok) {
-            let bggData;
-            if (isDev) {
-              bggData = await bggRes.json();
-            } else {
-              const allOriginsData = await bggRes.json();
-              bggData = JSON.parse(allOriginsData.contents);
-            }
-            const item = bggData?.item;
-            if (item) {
-              if (item.name) englishName = item.name.trim();
-              if (item.stats?.average) rating = parseFloat(item.stats.average).toFixed(1);
-              if (item.stats?.avgweight) weight = parseFloat(item.stats.avgweight).toFixed(2);
-              if (item.yearpublished && !year) year = item.yearpublished;
-              
-              // BGG 데이터는 보드라이프 데이터가 없을 때만 Fallback으로 사용
-              if (!category && item.links?.boardgamecategory) {
-                const rawCats = item.links.boardgamecategory.map(l => l.name).slice(0, 3).join(', ');
-                category = translateText(rawCats, CATEGORY_MAP);
-              }
-              if (!mechanisms && item.links?.boardgamemechanic) {
-                const rawMechs = item.links.boardgamemechanic.map(l => l.name).slice(0, 4).join(', ');
-                mechanisms = translateText(rawMechs, MECHANISM_MAP);
-              }
-
-              if (!image && item.images) {
-                image = item.images.original || item.images.large || item.images.medium || '';
-                thumbnail = item.images.thumb || image;
-              }
-
-              if (item.description) {
-                const rawDesc = item.description;
-                const d = new DOMParser().parseFromString(rawDesc, "text/html");
-                const cleanDesc = d.documentElement.textContent;
-                
-                setStatusMessage('BGG 설명을 한글로 번역 중...');
-                const translated = await translateToKorean(cleanDesc);
-                if (translated && translated.length > 50) {
-                  description = translated;
-                }
-              }
-            }
-          }
-        } catch (e) {
-          console.error("BGG 보강 실패", e);
-        }
+      // 4. 데이터 구성 및 번역
+      setStatusMessage('데이터 정리 중...');
+      
+      // 카테고리/메커니즘 병합 (보드라이프 우선)
+      const category = bl.category || translateText(bggData.categories.join(', '), CATEGORY_MAP);
+      const mechanisms = bl.mechanisms || translateText(bggData.mechanisms.join(', '), MECHANISM_MAP);
+      
+      let description = bggData.description || '';
+      if (description) {
+        description = await translateToKorean(description.replace(/<[^>]+>/g, '').replace(/&#10;/g, ' ').trim());
       }
 
-      // Fallback: 정규식 평점/난이도/영문명
-      if (!rating) {
-        const ratingMatch = htmlText.match(/평점\s*:?\s*(\d+(\.\d+)?)/i) || htmlText.match(/(\d+(\.\d+)?)\s*점/);
-        if (ratingMatch) rating = parseFloat(ratingMatch[1]).toFixed(1);
-      }
-      if (!weight) {
-        const weightMatch = htmlText.match(/난이도\s*:?\s*(\d+(\.\d+)?)/i);
-        if (weightMatch) weight = parseFloat(weightMatch[1]).toFixed(2);
-      }
-      if (!englishName) {
-        const engMatch = name.match(/[a-zA-Z\s]{2,}/);
-        if (engMatch) englishName = engMatch[0].trim();
-      }
-
-      let type = 'base';
-      if (name.includes('확장') || htmlText.includes('확장판') || htmlText.includes('본판 필요')) {
-        type = 'expansion';
-      }
-
-      setStatusMessage('Firestore에 저장 중...');
-
-      // 6. Firestore 저장
       const newGame = {
-        name,
-        englishName,
-        type,
-        year,
-        boardlifeId,
-        bggId,
-        minPlayers: minPlayers ? Number(minPlayers) : '',
-        maxPlayers: maxPlayers ? Number(maxPlayers) : '',
-        playingTime: playingTime ? Number(playingTime) : '',
-        weight: weight ? Number(weight) : '',
-        rating: rating ? Number(rating) : '',
-        category,
-        theme,
-        mechanisms,
-        description,
-        image: image,
-        thumbnail: thumbnail,
+        name: blName || bggData.name || '',
+        englishName: bggData.name || '',
+        type: bggInfo.type === 'boardgameexpansion' ? 'expansion' : 'base',
+        year: bl.year || bggData.year || '',
+        bggId: bggData.bggId || '',
+        boardlifeId: boardlifeId || '',
+        minPlayers: (bl.minPlayers || bggData.minPlayers) ? Number(bl.minPlayers || bggData.minPlayers) : '',
+        maxPlayers: (bl.maxPlayers || bggData.maxPlayers) ? Number(bl.maxPlayers || bggData.maxPlayers) : '',
+        playingTime: (bl.playingTime || bggData.playingTime) ? Number(bl.playingTime || bggData.playingTime) : '',
+        bestPlayerCount: bl.bestPlayerCount || bggData.bestPlayerCount || '',
+        weight: (bl.weight || bggData.weight) ? Number(bl.weight || bggData.weight) : '',
+        rating: (bl.rating || bggData.rating) ? Number(bl.rating || bggData.rating) : '',
+        category: category || '',
+        mechanisms: mechanisms || '',
+        theme: bl.theme || '',
+        description: description || '',
+        image: bggData.image || '',
+        thumbnail: bggData.thumbnail || '',
         isRented: false
       };
 
       const docRef = await addDoc(collection(db, "games"), newGame);
-      const addedGame = { id: docRef.id, ...newGame };
+      const addedGameWithId = { id: docRef.id, ...newGame };
 
       setSuccess(true);
+      setStatusMessage('게임이 성공적으로 추가되었습니다! (BGG 데이터 연동 완료)');
       setUrl('');
-      setStatusMessage('게임이 성공적으로 추가되었습니다!');
-
+      
       if (onAddSuccess) {
-        setTimeout(() => {
-          onAddSuccess(addedGame);
-        }, 1000);
+        setTimeout(() => onAddSuccess(addedGameWithId), 1500);
       }
-
-      setSuccess(true);
-      setUrl('');
-      setStatusMessage('게임이 성공적으로 추가되었습니다!');
     } catch (err) {
       console.error(err);
       setError('게임 추가 중 오류가 발생했습니다: ' + err.message);
@@ -382,21 +284,11 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
                 htmlText = allOriginsData.contents;
               }
               
-              const bggMatch = htmlText.match(/boardgamegeek\.com\/boardgame\/(\d+)/i);
-              const bggExpMatch = htmlText.match(/boardgamegeek\.com\/boardgameexpansion\/(\d+)/i);
-              const bggAnyMatch = htmlText.match(/boardgamegeek\.com\/.*?\/(\d+)/i);
-
+              const bggMatch = htmlText.match(/boardgamegeek\.com\/(boardgame|boardgameexpansion|thing)\/(\d+)/i);
               if (bggMatch) {
-                bggId = bggMatch[1];
-                bggSubtype = 'boardgame';
-              } else if (bggExpMatch) {
-                bggId = bggExpMatch[1];
-                bggSubtype = 'boardgameexpansion';
-              } else if (bggAnyMatch) {
-                bggId = bggAnyMatch[1];
-                if (htmlText.includes('boardgameexpansion')) {
-                  bggSubtype = 'boardgameexpansion';
-                }
+                const type = bggMatch[1];
+                bggId = bggMatch[2];
+                bggSubtype = type === 'boardgameexpansion' ? 'boardgameexpansion' : 'boardgame';
               }
             }
           } catch (blErr) {
@@ -460,6 +352,7 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
       setBatchLoading(false);
     }
   };
+
 
   return (
     <div style={{
@@ -570,12 +463,13 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
             {batchLoading ? '일괄 업데이트 진행 중...' : '기존 게임 세부 정보 일괄 업데이트 (카테고리/테마 등)'}
           </button>
 
-          {batchProgress && (
-            <div style={{ fontSize: '11px', color: 'var(--accent-primary)', fontFamily: 'monospace', background: 'var(--bg-app)', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
-              {batchProgress}
-            </div>
-          )}
-        </div>
+            {batchProgress && (
+              <div style={{ fontSize: '11px', color: 'var(--accent-primary)', fontFamily: 'monospace', background: 'var(--bg-app)', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+                {batchProgress}
+              </div>
+            )}
+
+          </div>
       </div>
     </div>
   );

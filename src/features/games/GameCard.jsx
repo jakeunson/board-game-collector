@@ -1,15 +1,6 @@
 import React from 'react';
 import { Users, Clock, Star } from 'lucide-react';
-
-function nameToGradient(name = '') {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const h1 = Math.abs(hash) % 360;
-  const h2 = (h1 + 40) % 360;
-  return `linear-gradient(135deg, hsl(${h1}, 45%, 65%), hsl(${h2}, 45%, 55%))`;
-}
+import { nameToGradient } from '../../utils/helpers';
 
 function GameCard({ game, onClick }) {
   const initial = game.name ? game.name.charAt(0) : '?';

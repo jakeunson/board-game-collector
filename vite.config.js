@@ -28,11 +28,19 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
           rewrite: (path) => path.replace(/^\/bgg-api/, ''),
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              if (env.VITE_BGG_TOKEN) {
+                proxyReq.setHeader('Authorization', `Bearer ${env.VITE_BGG_TOKEN}`);
+              }
+            });
+          },
         },
         '/boardlife': {
           target: 'https://boardlife.co.kr',
           changeOrigin: true,
           secure: false,
+          autoRewrite: true,
           rewrite: (path) => path.replace(/^\/boardlife/, ''),
         },
         '/translate-api': {

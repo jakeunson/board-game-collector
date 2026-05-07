@@ -1,104 +1,23 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useRef, useEffect } from 'react';
-import { Users, Clock, Star, Brain, X, Trash2, ExternalLink, Video, Search, Globe, Calendar, Layers, Puzzle, Camera, Loader2, Edit2, Save, Undo } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { addDoc, collection } from 'firebase/firestore';
 import { storage, db } from '../../firebase';
 import { useGames } from '../../contexts/GameContext';
-import { 
-  extractDetailsFromHtml, 
-  translateToKorean 
-} from '../../utils/gameDataExtractor';
-import noImage from '../../assets/no-image.jpg';
+import { extractDetailsFromHtml, translateToKorean } from '../../utils/gameDataExtractor';
+import { bggService } from '../../utils/bggService';
+import { formatPlayers } from '../../utils/helpers';
+import { proxyFetchHtml } from '../../utils/proxyFetch';
+import { isDev } from '../../utils/envUtils';
 
-function StatCard({ icon, label, value, color }) {
-  if (value === undefined || value === null || value === '') return null;
-  return (
-    <div className="glass" style={{
-      padding: '12px 8px',
-      borderRadius: '12px',
-      textAlign: 'center',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '4px',
-      borderBottom: `2px solid ${color || 'var(--accent-primary)'}`
-    }}>
-      <div style={{ color: color || 'var(--accent-primary)', display: 'flex' }}>
-        {React.isValidElement(icon) ? React.cloneElement(icon, { size: 16 }) : icon}
-      </div>
-      <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', fontWeight: '700', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontWeight: '800', fontSize: '14px', color: 'var(--text-primary)' }}>{value}</div>
-    </div>
-  );
-}
-
-function TagList({ items, icon, label }) {
-  if (!items) return null;
-  return (
-    <div style={{ marginBottom: '16px' }}>
-      <h3 style={{
-        fontSize: '11px',
-        fontWeight: '800',
-        color: 'var(--text-tertiary)',
-        marginBottom: '8px',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px'
-      }}>
-        {icon} {label}
-      </h3>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-        {items.split(',').map((item, i) => (
-          <span
-            key={i}
-            style={{
-              padding: '4px 10px',
-              background: 'var(--bg-app)',
-              borderRadius: '8px',
-              fontSize: '12px',
-              color: 'var(--text-secondary)',
-              border: '1px solid var(--border-subtle)'
-            }}
-          >
-            {item.trim()}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function LinkButton({ href, icon, label, color }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      style={{
-        display: 'flex', alignItems: 'center', gap: '8px', padding: '10px',
-        background: 'var(--bg-app)', borderRadius: '10px', textDecoration: 'none',
-        color: 'var(--text-primary)', fontSize: '12px', fontWeight: '600',
-        border: '1px solid var(--border-subtle)', transition: 'all 0.2s'
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.borderColor = color;
-        e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = `0 4px 12px ${color}15`;
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.borderColor = 'var(--border-subtle)';
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = 'none';
-      }}
-    >
-      <div style={{ color }}>{icon}</div>
-      {label}
-    </a>
-  );
-}
+// 서브 컴포넌트
+import GameDetailHeader from './detail/GameDetailHeader';
+import GameImageSection from './detail/GameImageSection';
+import GameInfoSection from './detail/GameInfoSection';
+import RentRequestForm from './detail/RentRequestForm';
+import ExpansionRelations from './detail/ExpansionRelations';
+import ExternalLinks from './detail/ExternalLinks';
 
 export default function GameDetail({ game: initialGame, onClose, onDelete, onUpdate, onGameChange }) {
   const { gameCollection, updateGame, isAdmin } = useGames();
@@ -109,16 +28,18 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [selectedExpansions, setSelectedExpansions] = useState([]);
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
   const fileInputRef = useRef(null);
 
+  // 대여 폼 상태
+  const todayStr = new Date().toISOString().split('T')[0];
   const [showRentForm, setShowRentForm] = useState(false);
   const [rentEmail, setRentEmail] = useState('');
-  const todayStr = new Date().toISOString().split('T')[0];
   const [rentStartDate, setRentStartDate] = useState(todayStr);
   const [rentEndDate, setRentEndDate] = useState(todayStr);
   const [isSubmittingRent, setIsSubmittingRent] = useState(false);
-  const [isDescExpanded, setIsDescExpanded] = useState(false);
 
+  // 편집 모드 진입 시 현재 게임 데이터로 폼 초기화
   useEffect(() => {
     if (game && isEditing) {
       setEditData({
@@ -137,44 +58,36 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
         boardlifeId: game.boardlifeId || '',
         type: game.type || 'base',
         year: game.year || '',
-        isHidden: game.isHidden || false
+        isHidden: game.isHidden || false,
       });
-
       setSelectedExpansions(
-        gameCollection
-          .filter(g => g.parentGameId === game.id)
-          .map(g => g.id)
+        gameCollection.filter(g => g.parentGameId === game.id).map(g => g.id)
       );
     }
   }, [game, isEditing, gameCollection]);
 
   if (!game) return null;
 
-  const handleImageUpload = async (e) => {
+  const players = formatPlayers(game.minPlayers, game.maxPlayers);
+
+  /* ── 핸들러: 폼 필드 변경 ── */
+  const handleInputChange = (field, value) => {
+    setEditData(prev => ({ ...prev, [field]: value }));
+  };
+
+  /* ── 핸들러: 이미지 업로드 ── */
+  const handleImageUpload = async e => {
     const file = e.target.files[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('이미지 파일만 업로드 가능합니다.');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert('파일 크기는 5MB 이하여야 합니다.');
-      return;
-    }
+    if (!file.type.startsWith('image/')) { alert('이미지 파일만 업로드 가능합니다.'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('파일 크기는 5MB 이하여야 합니다.'); return; }
 
     try {
       setIsUploading(true);
       const storageRef = ref(storage, `games/${game.id}/${Date.now()}_${file.name}`);
       const snapshot = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
-
-      await onUpdate(game.id, {
-        image: downloadURL,
-        thumbnail: downloadURL
-      });
-
+      await onUpdate(game.id, { image: downloadURL, thumbnail: downloadURL });
       alert('이미지가 성공적으로 업데이트되었습니다.');
     } catch (error) {
       console.error('Upload failed:', error);
@@ -184,6 +97,7 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
     }
   };
 
+  /* ── 핸들러: 저장 ── */
   const handleSave = async () => {
     try {
       const updatedFields = {
@@ -202,7 +116,7 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
         boardlifeId: editData.boardlifeId,
         type: editData.type,
         year: editData.year,
-        isHidden: editData.isHidden
+        isHidden: editData.isHidden,
       };
 
       await onUpdate(game.id, updatedFields);
@@ -211,10 +125,9 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
         const prevExpansions = gameCollection.filter(g => g.parentGameId === game.id).map(g => g.id);
         const removed = prevExpansions.filter(id => !selectedExpansions.includes(id));
         const added = selectedExpansions.filter(id => !prevExpansions.includes(id));
-
         await Promise.all([
-          ...removed.map(id => updateGame(id, { parentGameId: "" })),
-          ...added.map(id => updateGame(id, { parentGameId: game.id, type: "expansion" }))
+          ...removed.map(id => updateGame(id, { parentGameId: '' })),
+          ...added.map(id => updateGame(id, { parentGameId: game.id, type: 'expansion' })),
         ]);
       }
 
@@ -226,84 +139,64 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
     }
   };
 
+  /* ── 핸들러: 보드라이프/BGG 정보 불러오기 ── */
   const handleFetchGameInfo = async () => {
-    if (!game.boardlifeId) {
-      alert('보드라이프 ID가 등록되어 있지 않습니다.');
-      return;
-    }
+    if (!game.boardlifeId) { alert('보드라이프 ID가 등록되어 있지 않습니다.'); return; }
 
     setIsFetchingInfo(true);
     try {
-      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      let htmlText = '';
-      const targetUrl = `https://boardlife.co.kr/game/${game.boardlifeId}`;
-
-      if (isDev) {
-        const response = await fetch(`/boardlife/game/${game.boardlifeId}`);
-        if (response.ok) htmlText = await response.text();
-      } else {
-        try {
-          const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
-          if (response.ok) {
-            const data = await response.json();
-            htmlText = data.contents;
-          }
-        } catch {
-          const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
-          if (response.ok) htmlText = await response.text();
-        }
-      }
+      const devPath = `/boardlife/game/${game.boardlifeId}`;
+      const prodUrl = `https://boardlife.co.kr/game/${game.boardlifeId}`;
+      const htmlText = await proxyFetchHtml(devPath, prodUrl);
 
       if (htmlText) {
-        const { year, category, theme, mechanisms } = extractDetailsFromHtml(htmlText);
-        
-        // 폼 데이터 업데이트
+        const bl = extractDetailsFromHtml(htmlText);
         setEditData(prev => ({
           ...prev,
-          year: year || prev.year,
-          category: category || prev.category,
-          theme: theme || prev.theme,
-          mechanisms: mechanisms || prev.mechanisms
+          year: bl.year || prev.year,
+          category: bl.category || prev.category,
+          theme: bl.theme || prev.theme,
+          mechanisms: bl.mechanisms || prev.mechanisms,
+          minPlayers: bl.minPlayers || prev.minPlayers,
+          maxPlayers: bl.maxPlayers || prev.maxPlayers,
+          playingTime: bl.playingTime || prev.playingTime,
+          rating: bl.rating || prev.rating,
+          weight: bl.weight || prev.weight,
+          bestPlayerCount: bl.bestPlayerCount || prev.bestPlayerCount,
         }));
 
-        // BGG에서 설명 가져오기
+        // BGG 보강
         let bggId = game.bggId;
         if (!bggId) {
-          const bggMatch = htmlText.match(/boardgamegeek\.com\/boardgame\/(\d+)/i);
+          const bggMatch = htmlText.match(/boardgamegeek\.com\/(?:boardgame|boardgameexpansion|thing)\/(\d+)/i);
           if (bggMatch) bggId = bggMatch[1];
         }
 
         if (bggId) {
-          const bggSubtype = game.type === 'expansion' ? 'boardgameexpansion' : 'boardgame';
-          let bggUrl = `/bgg-api/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
-          if (!isDev) {
-            const targetBggUrl = `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
-            bggUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetBggUrl)}`;
-          }
+          try {
+            const bggData = await bggService.getGameDetails(bggId, game.type === 'expansion' ? 'boardgameexpansion' : 'boardgame');
+            if (bggData) {
+              setEditData(prev => ({
+                ...prev,
+                weight: prev.weight || bggData.weight,
+                rating: prev.rating || bggData.rating,
+                bestPlayerCount: prev.bestPlayerCount || bggData.bestPlayerCount,
+                minPlayers: prev.minPlayers || bggData.minPlayers,
+                maxPlayers: prev.maxPlayers || bggData.maxPlayers,
+                playingTime: prev.playingTime || bggData.playingTime,
+                year: prev.year || bggData.year,
+                bggId,
+              }));
 
-          const bggRes = await fetch(bggUrl);
-          if (bggRes.ok) {
-            let bggData;
-            if (isDev) bggData = await bggRes.json();
-            else {
-              const aoData = await bggRes.json();
-              bggData = JSON.parse(aoData.contents);
-            }
-            
-            const item = bggData?.item;
-            if (item) {
-              if (item.description) {
-                const docParser = new DOMParser().parseFromString(item.description, "text/html");
-                const cleanDesc = docParser.documentElement.textContent;
-                const translated = await translateToKorean(cleanDesc);
-                if (translated) {
-                  setEditData(prev => ({ ...prev, description: translated }));
-                }
-              }
-              if (item.yearpublished && !year) {
-                setEditData(prev => ({ ...prev, year: item.yearpublished }));
+              if (bggData.description) {
+                const translated = await translateToKorean(
+                  bggData.description.replace(/<[^>]+>/g, '').replace(/&#10;/g, ' ').trim()
+                );
+                if (translated) setEditData(prev => ({ ...prev, description: translated }));
               }
             }
+          } catch (bggErr) {
+            console.error('BGG 보강 실패:', bggErr);
           }
         }
         alert('데이터를 성공적으로 불러왔습니다. 내용을 확인하신 후 [저장]을 눌러주세요.');
@@ -311,29 +204,27 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
         alert('데이터를 가져오는데 실패했습니다.');
       }
     } catch (err) {
-      console.error("Fetch Info Error:", err);
+      console.error('Fetch Info Error:', err);
       alert('오류가 발생했습니다: ' + err.message);
     } finally {
       setIsFetchingInfo(false);
     }
   };
 
-  const handleRentSubmit = async (e) => {
+  /* ── 핸들러: 대여 신청 ── */
+  const handleRentSubmit = async e => {
     e.preventDefault();
-    if (!rentEmail || !rentStartDate || !rentEndDate) {
-      alert('모든 필드를 입력해주세요.');
-      return;
-    }
+    if (!rentEmail || !rentStartDate || !rentEndDate) { alert('모든 필드를 입력해주세요.'); return; }
     setIsSubmittingRent(true);
     try {
-      await addDoc(collection(db, "rentalRequests"), {
+      await addDoc(collection(db, 'rentalRequests'), {
         gameId: game.id,
         gameName: game.name,
         email: rentEmail,
         rentDate: rentStartDate,
         returnDate: rentEndDate,
         status: 'pending',
-        requestedAt: new Date().toISOString()
+        requestedAt: new Date().toISOString(),
       });
       alert('대여 신청이 완료되었습니다.');
       setShowRentForm(false);
@@ -348,14 +239,14 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
     }
   };
 
-  const players = game.minPlayers && game.maxPlayers
-    ? game.minPlayers === game.maxPlayers ? `${game.maxPlayers}인` : `${game.minPlayers}–${game.maxPlayers}인`
-    : game.maxPlayers ? `${game.maxPlayers}인` : null;
-
-  const handleInputChange = (field, value) => {
-    setEditData(prev => ({ ...prev, [field]: value }));
+  /* ── 핸들러: 확장판 토글 ── */
+  const handleToggleExpansion = (id, checked) => {
+    setSelectedExpansions(prev =>
+      checked ? [...prev, id] : prev.filter(eid => eid !== id)
+    );
   };
 
+  /* ── 렌더 ── */
   return (
     <div
       onClick={onClose}
@@ -363,469 +254,118 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
       style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '20px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)'
+        padding: '20px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)',
       }}
     >
+      {/* 배경 블러 이미지 */}
       <div style={{
         position: 'absolute', inset: 0,
         backgroundImage: `url(${game.image})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        filter: 'blur(60px) brightness(0.4)',
-        opacity: 0.4,
-        zIndex: -1
+        backgroundSize: 'cover', backgroundPosition: 'center',
+        filter: 'blur(60px) brightness(0.4)', opacity: 0.4, zIndex: -1,
       }} />
 
       <div
         className="animate-slide-up glass detail-modal"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: '800px', maxHeight: '95vh',
           borderRadius: '20px', overflow: 'hidden', display: 'flex',
           flexDirection: 'column', boxShadow: 'var(--shadow-xl)',
-          background: 'var(--bg-modal)', border: '1px solid rgba(255,255,255,0.1)'
+          background: 'var(--bg-modal)', border: '1px solid rgba(255,255,255,0.1)',
         }}
       >
-        {/* Header */}
-        <div style={{
-          padding: '16px 24px', display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', borderBottom: '1px solid var(--border-subtle)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {isEditing ? '정보 수정 모드' : 'Game Details'}
-            </span>
-            <span style={{
-              fontSize: '11px',
-              background: 'var(--bg-app)',
-              padding: '2px 8px',
-              borderRadius: '6px',
-              color: 'var(--accent-primary)',
-              fontWeight: '700',
-              border: '1px solid var(--border-subtle)'
-            }}>
-              ID: {game.boardlifeId || game.id}
-            </span>
-          </div>
+        {/* 헤더 */}
+        <GameDetailHeader
+          game={game}
+          isEditing={isEditing}
+          isAdmin={isAdmin}
+          onEdit={() => setIsEditing(true)}
+          onSave={handleSave}
+          onCancelEdit={() => setIsEditing(false)}
+          onClose={onClose}
+        />
 
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {isEditing ? (
-              <>
-                <button
-                  onClick={handleSave}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                    padding: '6px 12px', background: 'var(--accent-primary)',
-                    border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px', fontWeight: '700', cursor: 'pointer'
-                  }}
-                >
-                  <Save size={14} /> 저장
-                </button>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                    padding: '6px 12px', background: 'var(--bg-app)',
-                    border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '12px', fontWeight: '700', cursor: 'pointer'
-                  }}
-                >
-                  <Undo size={14} /> 취소
-                </button>
-              </>
-            ) : (
-              (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || isAdmin) && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                    padding: '6px 12px', background: 'var(--bg-app)',
-                    border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '700', cursor: 'pointer'
-                  }}
-                >
-                  <Edit2 size={14} /> 정보 수정
-                </button>
-              )
-            )}
-
-            <button
-              onClick={onClose}
-              style={{
-                background: 'var(--bg-app)', border: 'none', cursor: 'pointer',
-                padding: '6px', color: 'var(--text-secondary)', borderRadius: '50%',
-                display: 'flex', transition: 'all 0.2s'
-              }}
-              onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-primary)'}
-            >
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-
+        {/* 본문 */}
         <div className="detail-content" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
           <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: '270px 1fr', gap: '32px' }}>
 
-            {/* Left Column: Image + Stats */}
+            {/* 좌측: 이미지 + 통계 + 대여 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              
-              {/* Rent Request Section */}
               {!isEditing && (
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
-                  {game.isRented ? (
-                    <div style={{ textAlign: 'center', color: '#ef4444', fontWeight: '700', fontSize: '14px', padding: '8px' }}>
-                      🔒 현재 대여중인 게임입니다.
-                    </div>
-                  ) : (
-                    <>
-                      {!showRentForm ? (
-                        <button 
-                          onClick={() => setShowRentForm(true)}
-                          className="btn-primary"
-                          style={{ width: '100%', padding: '10px', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                        >
-                          <Calendar size={16} /> 대여 신청하기
-                        </button>
-                      ) : (
-                        <form onSubmit={handleRentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          <h4 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>대여 신청 정보 입력</h4>
-                          <div>
-                            <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>이메일</label>
-                            <input type="email" required value={rentEmail} onChange={e => setRentEmail(e.target.value)} placeholder="example@email.com" style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px' }} />
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                            <div style={{ minWidth: 0 }}>
-                              <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>대여 시작일</label>
-                              <input type="date" required value={rentStartDate} onChange={e => setRentStartDate(e.target.value)} onClick={(e) => e.target.showPicker()} style={{ width: '100%', boxSizing: 'border-box', minWidth: 0, padding: '8px 6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px', cursor: 'pointer', fontSize: '12px' }} />
-                            </div>
-                            <div style={{ minWidth: 0 }}>
-                              <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>반납 예정일</label>
-                              <input type="date" required value={rentEndDate} onChange={e => setRentEndDate(e.target.value)} onClick={(e) => e.target.showPicker()} style={{ width: '100%', boxSizing: 'border-box', minWidth: 0, padding: '8px 6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px', cursor: 'pointer', fontSize: '12px' }} />
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                            <button type="submit" disabled={isSubmittingRent} className="btn-primary" style={{ flex: 1, padding: '8px' }}>
-                              {isSubmittingRent ? '제출 중...' : '신청 완료'}
-                            </button>
-                            <button type="button" onClick={() => setShowRentForm(false)} style={{ flex: 1, padding: '8px', background: 'none', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                              취소
-                            </button>
-                          </div>
-                        </form>
-                      )}
-                    </>
-                  )}
-                </div>
+                <RentRequestForm
+                  game={game}
+                  showRentForm={showRentForm}
+                  onShowForm={() => setShowRentForm(true)}
+                  rentEmail={rentEmail}
+                  rentStartDate={rentStartDate}
+                  rentEndDate={rentEndDate}
+                  isSubmittingRent={isSubmittingRent}
+                  onEmailChange={setRentEmail}
+                  onStartDateChange={setRentStartDate}
+                  onEndDateChange={setRentEndDate}
+                  onSubmit={handleRentSubmit}
+                  onCancel={() => setShowRentForm(false)}
+                />
               )}
 
-              <div
-                className="image-container"
-                style={{
-                  position: 'relative',
-                  width: '100%',
-                  borderRadius: '20px',
-                  overflow: 'hidden',
-                  boxShadow: 'var(--shadow-lg)',
-                  border: '1px solid var(--border-subtle)',
-                  background: 'var(--bg-app)'
-                }}
-              >
-                <img
-                  src={game.image || noImage}
-                  alt={game.name}
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = noImage;
-                  }}
-                  style={{
-                    width: '100%',
-                    height: 'auto',
-                    display: 'block',
-                    opacity: isUploading ? 0.5 : 1,
-                    transition: 'opacity 0.3s'
-                  }}
-                />
-
-                {/* Upload Overlay */}
-                {isEditing && (
-                  <div
-                    className="image-upload-overlay"
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: isUploading ? 'default' : 'pointer',
-                    }}
-                    onClick={() => !isUploading && fileInputRef.current?.click()}
-                  >
-                    {isUploading ? (
-                      <div style={{ textAlign: 'center', color: '#fff', opacity: 1 }}>
-                        <Loader2 size={32} className="animate-spin" />
-                        <p style={{ fontSize: '12px', marginTop: '8px', fontWeight: '600' }}>업로드 중...</p>
-                      </div>
-                    ) : (
-                      <div className="upload-content" style={{ textAlign: 'center', color: '#fff' }}>
-                        <Camera size={32} />
-                        <p style={{ fontSize: '12px', marginTop: '8px', fontWeight: '600' }}>이미지 변경</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  style={{ display: 'none' }}
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                />
-              </div>
-
-              {/* Stat Grid (2x2) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                {isEditing ? (
-                  <>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>최소 인원</label>
-                      <input type="number" value={editData.minPlayers} onChange={e => handleInputChange('minPlayers', e.target.value)} style={{ width: '100%', padding: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)' }} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>최대 인원</label>
-                      <input type="number" value={editData.maxPlayers} onChange={e => handleInputChange('maxPlayers', e.target.value)} style={{ width: '100%', padding: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)' }} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>시간 (분)</label>
-                      <input type="number" value={editData.playingTime} onChange={e => handleInputChange('playingTime', e.target.value)} style={{ width: '100%', padding: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)' }} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>난이도 (Weight)</label>
-                      <input type="number" step="0.1" value={editData.weight} onChange={e => handleInputChange('weight', e.target.value)} style={{ width: '100%', padding: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)' }} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>평점</label>
-                      <input type="number" step="0.1" value={editData.rating} onChange={e => handleInputChange('rating', e.target.value)} style={{ width: '100%', padding: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)' }} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>출시년도</label>
-                      <input type="text" value={editData.year} onChange={e => handleInputChange('year', e.target.value)} placeholder="2021" style={{ width: '100%', padding: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)' }} />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <StatCard icon={<Users />} label="인원" value={players} color="#6366f1" />
-                    <StatCard icon={<Clock />} label="시간" value={game.playingTime ? `${game.playingTime}m` : null} color="#8b5cf6" />
-                    <StatCard icon={<Star />} label="평점" value={game.rating} color="#f59e0b" />
-                    <StatCard icon={<Brain />} label="난이도" value={game.weight || game.difficulty} color="#ec4899" />
-                  </>
-                )}
-              </div>
-
-              {/* Individual Game Data Fetch Button */}
-              {isEditing && (
-                <button
-                  onClick={handleFetchGameInfo}
-                  disabled={isFetchingInfo}
-                  style={{
-                    width: '100%', padding: '10px', background: 'var(--bg-app)',
-                    border: '1px solid var(--accent-primary)', borderRadius: '10px',
-                    color: 'var(--accent-primary)', cursor: 'pointer', fontSize: '12px',
-                    fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                  }}
-                >
-                  {isFetchingInfo ? (
-                    <><Loader2 size={14} className="animate-spin" /> 정보를 가져오는 중...</>
-                  ) : (
-                    <><Search size={14} /> 보드라이프/BGG에서 정보 다시 불러오기</>
-                  )}
-                </button>
-              )}
+              <GameImageSection
+                game={game}
+                isEditing={isEditing}
+                isUploading={isUploading}
+                isFetchingInfo={isFetchingInfo}
+                editData={editData}
+                players={players}
+                fileInputRef={fileInputRef}
+                onImageClick={() => fileInputRef.current?.click()}
+                onImageChange={handleImageUpload}
+                onFetchInfo={handleFetchGameInfo}
+                onEditDataChange={handleInputChange}
+              />
             </div>
 
-            {/* Right Column: Details */}
+            {/* 우측: 상세 정보 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div className="animate-slide-up">
-                {isEditing ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>한국어 게임명</label>
-                      <input value={editData.name} onChange={e => handleInputChange('name', e.target.value)} style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '16px', fontWeight: '700' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>영문 게임명</label>
-                      <input value={editData.englishName} onChange={e => handleInputChange('englishName', e.target.value)} style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '14px' }} />
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                      {game.isHidden && (
-                        <span style={{
-                          background: 'rgba(244, 63, 94, 0.15)',
-                          color: '#f43f5e',
-                          padding: '2px 8px',
-                          borderRadius: '6px',
-                          fontSize: '11px',
-                          fontWeight: '800',
-                          border: '1px solid rgba(244, 63, 94, 0.3)'
-                        }}>
-                          🔒 비공개
-                        </span>
-                      )}
-                      {game.category && game.category.split(',').slice(0, 3).map((cat, i) => (
-                        <span key={i} className="badge badge-category" style={{ fontSize: '10px' }}>{cat.trim()}</span>
-                      ))}
-                      {game.year && (
-                        <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
-                          <Calendar size={13} /> {game.year}
-                        </span>
-                      )}
-                    </div>
-                    <h1 style={{ fontSize: '26px', fontWeight: '900', lineHeight: '1.2', color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-                      {game.name}
-                    </h1>
-                    {game.englishName && (
-                      <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '4px' }}>{game.englishName}</p>
-                    )}
-                  </>
-                )}
-              </div>
+              <GameInfoSection
+                game={game}
+                isEditing={isEditing}
+                editData={editData}
+                isDescExpanded={isDescExpanded}
+                onDescToggle={() => setIsDescExpanded(p => !p)}
+                onEditDataChange={handleInputChange}
+              />
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {isEditing ? (
-                  <div>
-                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-tertiary)', display: 'block', marginBottom: '6px' }}>게임 소개</label>
-                    <textarea
-                      value={editData.description}
-                      onChange={e => handleInputChange('description', e.target.value)}
-                      rows={6}
-                      style={{ width: '100%', padding: '10px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', lineHeight: '1.6', resize: 'vertical' }}
-                    />
-                  </div>
-                ) : (
-                  game.description && (
-                    <div>
-                      <h3 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-tertiary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>게임 소개</h3>
-                      <p 
-                        onClick={() => game.description && game.description.length > 250 && setIsDescExpanded(!isDescExpanded)}
-                        style={{
-                          lineHeight: '1.6', 
-                          color: 'var(--text-secondary)', 
-                          fontSize: '13px',
-                          display: '-webkit-box', 
-                          WebkitLineClamp: isDescExpanded ? 'unset' : 6, 
-                          WebkitBoxOrient: 'vertical', 
-                          overflow: 'hidden',
-                          cursor: game.description && game.description.length > 250 ? 'pointer' : 'default',
-                          whiteSpace: 'pre-wrap'
-                        }}
-                      >
-                        {game.description}
-                      </p>
-                      {game.description && game.description.length > 250 && (
-                        <button 
-                          onClick={() => setIsDescExpanded(!isDescExpanded)}
-                          style={{
-                            background: 'none', 
-                            border: 'none', 
-                            color: 'var(--accent)', 
-                            fontSize: '12px', 
-                            fontWeight: '700', 
-                            cursor: 'pointer', 
-                            marginTop: '4px',
-                            padding: 0
-                          }}
-                        >
-                          {isDescExpanded ? '접기' : '더보기'}
-                        </button>
-                      )}
-                    </div>
-                  )
-                )}
-
-                {isEditing ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>카테고리 (쉼표로 구분)</label>
-                      <input value={editData.category} onChange={e => handleInputChange('category', e.target.value)} placeholder="전략게임, 테마게임" style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)' }} />
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                      <div>
-                        <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>테마 (쉼표로 구분)</label>
-                        <input value={editData.theme} onChange={e => handleInputChange('theme', e.target.value)} placeholder="경제, 농업" style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)' }} />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>진행 방식 (쉼표로 구분)</label>
-                        <input value={editData.mechanisms} onChange={e => handleInputChange('mechanisms', e.target.value)} placeholder="액션 드래프팅" style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)' }} />
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                    <TagList items={game.theme} icon={<Layers size={14} />} label="테마" />
-                    <TagList items={game.mechanisms} icon={<Puzzle size={14} />} label="진행 방식" />
-                  </div>
-                )}
-              </div>
-
-              {/* Type and Expansion Selection */}
+              {/* 구분 / 확장판 연결 (편집 모드) */}
               {isEditing && (
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div>
-                    <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>구분 (기본판 / 확장판)</label>
-                    <select 
-                      value={editData.type} 
+                <div className="section-box">
+                  <div className="form-group">
+                    <label className="form-label">구분 (기본판 / 확장판)</label>
+                    <select
+                      value={editData.type}
                       onChange={e => handleInputChange('type', e.target.value)}
-                      style={{ width: '100%', padding: '8px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-primary)', marginTop: '4px' }}
+                      className="form-input"
                     >
                       <option value="base">기본판</option>
                       <option value="expansion">확장판</option>
                     </select>
                   </div>
 
-                  {editData.type === 'base' && (
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>확장판 연결 (체크 시 묶음)</label>
-                      <div style={{ 
-                        maxHeight: '150px', 
-                        overflowY: 'auto', 
-                        background: 'var(--bg-app)', 
-                        border: '1px solid var(--border-subtle)', 
-                        borderRadius: '8px', 
-                        padding: '8px',
-                        marginTop: '4px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '6px'
-                      }}>
-                        {gameCollection
-                          .filter(g => g.id !== game.id && g.type === 'expansion')
-                          .map(exp => (
-                            <label key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                              <input 
-                                type="checkbox" 
-                                checked={selectedExpansions.includes(exp.id)} 
-                                onChange={e => {
-                                  if (e.target.checked) {
-                                    setSelectedExpansions(prev => [...prev, exp.id]);
-                                  } else {
-                                    setSelectedExpansions(prev => prev.filter(id => id !== exp.id));
-                                  }
-                                }} 
-                              />
-                              {exp.name}
-                            </label>
-                          ))}
-                      </div>
-                    </div>
-                  )}
+                  <ExpansionRelations
+                    game={game}
+                    isEditing={isEditing}
+                    editType={editData.type}
+                    selectedExpansions={selectedExpansions}
+                    onToggleExpansion={handleToggleExpansion}
+                    onGameChange={onGameChange}
+                  />
 
+                  {/* 비공개 토글 */}
                   <div style={{ marginTop: '8px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={editData.isHidden} 
-                        onChange={e => handleInputChange('isHidden', e.target.checked)} 
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={editData.isHidden}
+                        onChange={e => handleInputChange('isHidden', e.target.checked)}
                         style={{ width: '16px', height: '16px', accentColor: '#f43f5e' }}
                       />
                       <span style={{ color: editData.isHidden ? '#f43f5e' : 'inherit' }}>
@@ -836,142 +376,42 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                       체크 시 비로그인 사용자의 목록 및 검색 결과에서 제외됩니다.
                     </p>
                   </div>
-                </div>
-              )}
 
-              {/* IDs for Edit */}
-              {isEditing && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
-                  <div>
-                    <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>보드라이프 ID</label>
-                    <input value={editData.boardlifeId} onChange={e => handleInputChange('boardlifeId', e.target.value)} style={{ width: '100%', padding: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)' }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-tertiary)' }}>BGG ID</label>
-                    <input value={editData.bggId} onChange={e => handleInputChange('bggId', e.target.value)} style={{ width: '100%', padding: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)' }} />
+                  {/* ID 편집 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)', marginTop: '4px' }}>
+                    <div className="form-group">
+                      <label className="form-label">보드라이프 ID</label>
+                      <input value={editData.boardlifeId} onChange={e => handleInputChange('boardlifeId', e.target.value)} className="form-input" />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">BGG ID</label>
+                      <input value={editData.bggId} onChange={e => handleInputChange('bggId', e.target.value)} className="form-input" />
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Base/Expansion Relationship Display */}
+              {/* 확장판 관계 (뷰 모드) */}
               {!isEditing && (
-                <div style={{ marginBottom: '16px' }}>
-                  {game.type === 'base' && (
-                    <>
-                      <h3 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-tertiary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>포함된 확장판</h3>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                        {gameCollection
-                          .filter(g => g.parentGameId === game.id)
-                          .map(exp => (
-                            <span 
-                              key={exp.id} 
-                              onClick={() => onGameChange && onGameChange(exp)}
-                              style={{ 
-                                padding: '6px 12px', 
-                                background: 'rgba(239, 68, 68, 0.1)', 
-                                border: '1px solid rgba(239, 68, 68, 0.2)', 
-                                borderRadius: '8px', 
-                                fontSize: '13px', 
-                                color: '#ef4444',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                              }}
-                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-                              onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-                            >
-                              {exp.name}
-                            </span>
-                          ))}
-                        {gameCollection.filter(g => g.parentGameId === game.id).length === 0 && (
-                          <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>연결된 확장판이 없습니다.</span>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  {game.type === 'expansion' && game.parentGameId && (
-                    <>
-                      <h3 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-tertiary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>필요한 기본판</h3>
-                      {(() => {
-                        const parent = gameCollection.find(g => g.id === game.parentGameId);
-                        return parent ? (
-                          <span 
-                            onClick={() => onGameChange && onGameChange(parent)}
-                            style={{ 
-                              padding: '6px 12px', 
-                              background: 'rgba(99, 102, 241, 0.1)', 
-                              border: '1px solid rgba(99, 102, 241, 0.2)', 
-                              borderRadius: '8px', 
-                              fontSize: '13px', 
-                              color: '#6366f1',
-                              fontWeight: '600',
-                              display: 'inline-block',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)'}
-                          >
-                            {parent.name}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>기본판 정보가 없습니다.</span>
-                        );
-                      })()}
-                    </>
-                  )}
-                </div>
+                <ExpansionRelations
+                  game={game}
+                  isEditing={false}
+                  onGameChange={onGameChange}
+                />
               )}
 
-              {/* External Links */}
-              {!isEditing && (
-                <div>
-                  <h3 style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-tertiary)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>추가 정보 및 리뷰</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <LinkButton
-                      href={game.bggId ? `https://boardgamegeek.com/boardgame/${game.bggId}` : `https://boardgamegeek.com/search/boardgames?q=${encodeURIComponent(game.name)}`}
-                      icon={<Globe size={16} />}
-                      label="BoardGameGeek"
-                      color="#ff5100"
-                    />
-                    <LinkButton
-                      href={game.boardlifeId ? `https://boardlife.co.kr/game/${game.boardlifeId}` : `https://boardlife.co.kr/bbs_list.php?tb=boardgame_strategy&search_mode=ok&game_id=&search_word=${encodeURIComponent(game.name)}`}
-                      icon={<ExternalLink size={16} />}
-                      label="BoardLife"
-                      color="#005a9e"
-                    />
-                    <LinkButton
-                      href={`https://search.naver.com/search.naver?where=post&query=${encodeURIComponent(game.name + ' 보드게임')}`}
-                      icon={<Search size={16} />}
-                      label="Naver Review"
-                      color="#10b981"
-                    />
-                    <LinkButton
-                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent(game.name + ' 보드게임 룰 설명')}`}
-                      icon={<Video size={16} />}
-                      label="YouTube Tutorial"
-                      color="#ef4444"
-                    />
-                  </div>
-                </div>
-              )}
+              {/* 외부 링크 */}
+              {!isEditing && <ExternalLinks game={game} />}
 
-
-              {/* Delete Button */}
-              {!isEditing && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || isAdmin) && (
+              {/* 삭제 버튼 */}
+              {!isEditing && (isDev || isAdmin) && (
                 <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', paddingTop: '16px' }}>
                   <button
                     onClick={async () => {
                       const deleted = await onDelete(game.id);
                       if (deleted) onClose();
                     }}
-                    style={{
-                      background: 'none', border: '1px solid rgba(220, 38, 38, 0.2)', color: '#ef4444',
-                      borderRadius: '10px', padding: '8px 16px', fontSize: '13px', fontWeight: '600',
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
-                      transition: 'all 0.2s'
-                    }}
+                    className="btn-danger"
                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220, 38, 38, 0.05)'; e.currentTarget.style.borderColor = '#ef4444'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.2)'; }}
                   >

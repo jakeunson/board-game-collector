@@ -1,3 +1,5 @@
+import { isDev } from './envUtils.js';
+
 export const CATEGORY_MAP = {
   'Deduction': '추리',
   'Murder/Mystery': '미스터리',
@@ -85,8 +87,6 @@ export const translateToKorean = async (text) => {
     const chunks = splitIntoChunks(text, 1000);
     const translatedChunks = [];
 
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
     for (const chunk of chunks) {
       const baseUrl = isDev ? '/translate-api' : 'https://translate.googleapis.com';
       const url = `${baseUrl}/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(chunk)}`;
@@ -125,6 +125,51 @@ export const extractDetailsFromHtml = (htmlText) => {
   const blYearMatch = htmlText.match(/(\d{4})년/);
   if (blYearMatch) year = blYearMatch[1];
 
+  let minPlayers = '';
+  let maxPlayers = '';
+  const playersMatch = htmlText.match(/(\d+)\s*~\s*(\d+)\s*인/);
+  if (playersMatch) {
+    minPlayers = playersMatch[1];
+    maxPlayers = playersMatch[2];
+  } else {
+    const singlePlayerMatch = htmlText.match(/(\d+)\s*인용/);
+    if (singlePlayerMatch) {
+      minPlayers = singlePlayerMatch[1];
+      maxPlayers = singlePlayerMatch[1];
+    }
+  }
+
+  let playingTime = '';
+  const timeMatch = htmlText.match(/(\d+)\s*분/);
+  if (timeMatch) playingTime = timeMatch[1];
+
+  // 평점 및 난이도 추출 (보드라이프 상단 영역 - 초강력 정규식)
+  // 아이콘 클래스명 뒤에 나오는 첫 번째 숫자를 타겟팅
+  let rating = '';
+  const rMatch = htmlText.match(/fa-star[^>]*>[\s\S]*?([\d.]+)/i);
+  if (rMatch) rating = rMatch[1];
+  
+  let weight = '';
+  const wMatch = htmlText.match(/fa-chart-bar[^>]*>[\s\S]*?([\d.]+)/i);
+  if (wMatch) weight = wMatch[1];
+
+  // 정규식 실패 시 DOM으로 2차 시도
+  if (!rating || !weight) {
+    // 보드라이프 상단 헤더 영역의 숫자들 탐색
+    const scoreElements = doc.querySelectorAll('.fa-star, .fa-chart-bar');
+    scoreElements.forEach(el => {
+      const val = el.parentElement?.textContent?.trim().match(/[\d.]+/)?.[0];
+      if (val) {
+        if (el.classList.contains('fa-star')) rating = val;
+        else if (el.classList.contains('fa-chart-bar')) weight = val;
+      }
+    });
+  }
+
+  let bestPlayerCount = '';
+  const bestMatch = htmlText.match(/베스트\s*[:]\s*(\d+)인/);
+  if (bestMatch) bestPlayerCount = bestMatch[1];
+
   let category = '';
   let theme = '';
   let mechanisms = '';
@@ -144,5 +189,9 @@ export const extractDetailsFromHtml = (htmlText) => {
     }
   });
 
-  return { year, category, theme, mechanisms };
+  return { 
+    year, category, theme, mechanisms, 
+    minPlayers, maxPlayers, playingTime, 
+    rating, weight, bestPlayerCount 
+  };
 };

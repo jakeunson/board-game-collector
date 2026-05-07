@@ -18,30 +18,29 @@ import AddGameModal from './features/admin/AddGameModal';
 import BggEnricher from './features/admin/BggEnricher';
 import AdminAuthModal from './features/admin/AdminAuthModal';
 import RentalManager from './features/admin/RentalManager';
-import AdminLoginModal from './features/admin/AdminLoginModal';
 import ChangePasswordModal from './features/admin/ChangePasswordModal';
 
-
-
+/**
+ * activeModal 가능한 값:
+ *   'addGame' | 'enricher' | 'auth' | 'rental' | 'login' | 'changePassword' | null
+ */
 function AppContent() {
   const { loading, removeGame, updateGame, isAdmin } = useGames();
   const { filteredCollection, viewMode } = useFilters();
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedGame, setSelectedGame] = useState(null);
-  const [showEnricher, setShowEnricher] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [activeModal, setActiveModal] = useState(null);
   const [authCallback, setAuthCallback] = useState(null);
-  const [showRentalManager, setShowRentalManager] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [selectedGame, setSelectedGame] = useState(null);
 
-  const handleAdminAction = (action) => {
+  const openModal = name => setActiveModal(name);
+  const closeModal = () => setActiveModal(null);
+
+  const handleAdminAction = action => {
     if (isAdmin) {
       action();
     } else {
       setAuthCallback(() => action);
-      setShowAuthModal(true);
+      openModal('auth');
     }
   };
 
@@ -49,7 +48,7 @@ function AppContent() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div className="container">
 
-        <Header onOpenAddModal={() => handleAdminAction(() => setIsModalOpen(true))} />
+        <Header onOpenAddModal={() => handleAdminAction(() => openModal('addGame'))} />
 
         <FilterBar />
 
@@ -81,43 +80,55 @@ function AppContent() {
           </div>
         )}
 
-        <Footer 
-          onOpenAdmin={() => setShowEnricher(true)} 
-          onOpenRental={() => setShowRentalManager(true)} 
-          onOpenLogin={() => setShowLoginModal(true)}
-          onOpenChangePassword={() => setShowChangePasswordModal(true)}
+        <Footer
+          onOpenAdmin={() => openModal('enricher')}
+          onOpenRental={() => openModal('rental')}
+          onOpenLogin={() => openModal('login')}
+          onOpenChangePassword={() => openModal('changePassword')}
         />
       </div>
 
-      {/* Modals via Portals */}
-      {isModalOpen && createPortal(
-        <AddGameModal 
-          onClose={() => setIsModalOpen(false)} 
-          onAddSuccess={(game) => {
-            setIsModalOpen(false);
-            setSelectedGame(game);
-          }} 
+      {/* ── Modals via Portals ── */}
+      {activeModal === 'addGame' && createPortal(
+        <AddGameModal
+          onClose={closeModal}
+          onAddSuccess={game => { closeModal(); setSelectedGame(game); }}
         />,
         document.body
       )}
-      {showEnricher && createPortal(
-        <BggEnricher onDone={() => setShowEnricher(false)} />,
+
+      {activeModal === 'enricher' && createPortal(
+        <BggEnricher onDone={closeModal} />,
         document.body
       )}
-      {showAuthModal && createPortal(
-        <AdminAuthModal 
-          onClose={() => setShowAuthModal(false)} 
-          onSuccess={() => {
-            if (authCallback) authCallback();
-            setAuthCallback(null);
-          }} 
+
+      {activeModal === 'auth' && createPortal(
+        <AdminAuthModal
+          mode="auth"
+          onClose={closeModal}
+          onSuccess={() => { if (authCallback) authCallback(); setAuthCallback(null); }}
         />,
         document.body
       )}
-      {showRentalManager && createPortal(
-        <RentalManager onClose={() => setShowRentalManager(false)} />,
+
+      {activeModal === 'login' && createPortal(
+        <AdminAuthModal
+          mode="login"
+          onClose={closeModal}
+        />,
         document.body
       )}
+
+      {activeModal === 'rental' && createPortal(
+        <RentalManager onClose={closeModal} />,
+        document.body
+      )}
+
+      {activeModal === 'changePassword' && createPortal(
+        <ChangePasswordModal onClose={closeModal} />,
+        document.body
+      )}
+
       {selectedGame && createPortal(
         <GameDetail
           key={selectedGame.id}
@@ -127,14 +138,6 @@ function AppContent() {
           onUpdate={updateGame}
           onGameChange={setSelectedGame}
         />,
-        document.body
-      )}
-      {showLoginModal && createPortal(
-        <AdminLoginModal onClose={() => setShowLoginModal(false)} />,
-        document.body
-      )}
-      {showChangePasswordModal && createPortal(
-        <ChangePasswordModal onClose={() => setShowChangePasswordModal(false)} />,
         document.body
       )}
     </div>

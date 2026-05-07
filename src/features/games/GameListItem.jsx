@@ -1,14 +1,6 @@
 import React from 'react';
 import { Users, Clock, Star, Brain } from 'lucide-react';
-
-function nameToGradient(name = '') {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const h = Math.abs(hash) % 360;
-  return `linear-gradient(135deg, hsl(${h}, 45%, 65%), hsl(${h}, 45%, 55%))`;
-}
+import { nameToGradient, formatPlayers } from '../../utils/helpers';
 
 function GameListItem({ game, onClick }) {
   const [imgError, setImgError] = React.useState(false);
@@ -24,11 +16,7 @@ function GameListItem({ game, onClick }) {
   const gradient = nameToGradient(game.name);
   const initial = game.name ? game.name.charAt(0) : '?';
 
-  const players = game.minPlayers && game.maxPlayers
-    ? game.minPlayers === game.maxPlayers
-      ? `${game.maxPlayers}인`
-      : `${game.minPlayers}–${game.maxPlayers}인`
-    : game.maxPlayers ? `${game.maxPlayers}인` : null;
+  const players = formatPlayers(game.minPlayers, game.maxPlayers);
 
   return (
     <div
