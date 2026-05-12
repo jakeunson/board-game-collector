@@ -4,7 +4,7 @@
  * 배포환경: allorigins.win 프록시 자동 적용
  */
 
-import { isDev } from './envUtils';
+import { isDev } from './envUtils.js';
 
 /**
  * 외부 URL을 환경에 맞게 fetch합니다.
@@ -40,13 +40,14 @@ export async function proxyFetchHtml(devPath, prodUrl, options = {}) {
  * @param {RequestInit} [devOptions] 개발환경 fetch 옵션
  * @returns {Promise<any>} 파싱된 JSON 객체
  */
-export async function proxyFetchJson(devPath, prodUrl, devOptions = {}) {
+export async function proxyFetchJson(devPath, prodUrl, options = {}) {
   if (isDev) {
-    const res = await fetch(devPath, devOptions);
+    const res = await fetch(devPath, options);
     if (!res.ok) throw new Error(`Fetch 실패 (${res.status}): ${devPath}`);
     return res.json();
   }
 
+  // 배포 환경에서는 프록시 특성상 헤더 전달이 제한적일 수 있습니다.
   const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(prodUrl)}`);
   if (!res.ok) throw new Error(`allorigins 응답 실패 (${res.status})`);
   const data = await res.json();

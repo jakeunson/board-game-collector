@@ -1,62 +1,79 @@
 /**
- * BGG API Service Utility (JSON API v2)
- * Uses the provided token for authorized requests.
+ * BGG API Service Utility (XML API v2)
  */
 
-import { isDev } from './envUtils';
-import { proxyFetchJson } from './proxyFetch';
-
-const BASE_URL = isDev ? '/bgg-api' : 'https://api.geekdo.com';
+import { isDev } from './envUtils.js';
+import { proxyFetchHtml } from './proxyFetch.js';
 
 export const bggService = {
   /**
-   * Fetch game details using JSON API
+   * XML API2를 사용하여 게임 상세 정보를 가져옵니다.
    * @param {string} bggId BGG ID
-   * @param {string} type 'boardgame' or 'boardgameexpansion'
    * @returns {Promise<any>}
    */
   async getGameDetails(bggId, type = 'boardgame') {
     if (!bggId) return null;
 
     try {
-      const token = import.meta.env.VITE_BGG_TOKEN;
-      const devHeaders = {
-        'Accept': 'application/json',
+      const token = (typeof import.meta.env !== 'undefined') 
+        ? import.meta.env.VITE_BGG_TOKEN 
+        : (typeof process !== 'undefined' ? process.env.VITE_BGG_TOKEN : null);
+      
+      const headers = {
+        'Accept': 'application/xml',
         'User-Agent': 'BoardGameCollectorApp/2.0',
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       };
 
-      const devPath = `/bgg-api/api/geekitems?objecttype=thing&subtype=${type}&objectid=${bggId}&ajax=1&nosession=1`;
-      const prodUrl = `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=${type}&objectid=${bggId}&ajax=1&nosession=1`;
+      const devPath = `/xmlapi2/thing?id=${bggId}&stats=1`;
+      const prodUrl = `https://boardgamegeek.com/xmlapi2/thing?id=${bggId}&stats=1`;
 
-      const data = await proxyFetchJson(devPath, prodUrl, { headers: devHeaders });
-      if (!data) {
-        console.warn(`BGG API 응답 없음: ${bggId}`);
+      // XML 텍스트를 가져오기 위해 proxyFetchHtml 사용
+      const xmlText = await proxyFetchHtml(devPath, prodUrl, { headers });
+      if (!xmlText || xmlText.includes('Unauthorized')) {
+        console.error('BGG API 인증 실패 또는 데이터 없음');
         return null;
       }
 
-      const item = data?.item;
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      const item = xmlDoc.getElementsByTagName('item')[0];
       if (!item) return null;
 
-      const rating = item.stats?.average ? parseFloat(item.stats.average).toFixed(1) : '';
-      const weight = item.stats?.avgweight ? parseFloat(item.stats.avgweight).toFixed(2) : '';
+      // XML에서 값 추출을 위한 헬퍼
+      const getVal = (parent, tagName) => parent.getElementsByTagName(tagName)[0]?.getAttribute('value') || '';
+      const getText = (parent, tagName) => parent.getElementsByTagName(tagName)[0]?.textContent || '';
+
+      // 통계 데이터 (평점, 난이도)
+      const stats = item.getElementsByTagName('statistics')[0]?.getElementsByTagName('ratings')[0];
+      const rating = stats?.getElementsByTagName('average')[0]?.getAttribute('value') || '';
+      const weight = stats?.getElementsByTagName('averageweight')[0]?.getAttribute('value') || '';
+      
+      // 권장 인원 투표 결과
+      const userPlayersPoll = Array.from(item.getElementsByTagName('poll'))
+        .find(p => p.getAttribute('name') === 'suggested_numplayers');
+      const bestPlayerCount = this.extractBestPlayerCountXml(userPlayersPoll);
 
       return {
-        bggId: item.id || '',
-        name: item.name || '',
-        englishName: item.name || '',
-        year: item.yearpublished || '',
-        description: item.description || '',
-        image: item.imageurl || '',
-        thumbnail: item.thumburl || '',
-        minPlayers: item.minplayers || '',
-        maxPlayers: item.maxplayers || '',
-        playingTime: item.playingtime || '',
-        rating: rating,
-        weight: weight,
-        bestPlayerCount: this.extractBestPlayerCount(item.polls?.userplayers) || '',
-        categories: item.links?.boardgamecategory?.map(c => c.name) || [],
-        mechanisms: item.links?.boardgamemechanic?.map(m => m.name) || []
+        bggId: item.getAttribute('id') || '',
+        name: getVal(item, 'name'), // BGG XML에서 name은 보통 첫 번째 항목이 primary
+        englishName: getVal(item, 'name'),
+        year: getVal(item, 'yearpublished'),
+        description: getText(item, 'description'),
+        image: getText(item, 'image'),
+        thumbnail: getText(item, 'thumbnail'),
+        minPlayers: getVal(item, 'minplayers'),
+        maxPlayers: getVal(item, 'maxplayers'),
+        playingTime: getVal(item, 'playingtime'),
+        rating: rating ? parseFloat(rating).toFixed(1) : '',
+        weight: weight ? parseFloat(weight).toFixed(2) : '',
+        bestPlayerCount: bestPlayerCount || '',
+        categories: Array.from(item.getElementsByTagName('link'))
+          .filter(l => l.getAttribute('type') === 'boardgamecategory')
+          .map(l => l.getAttribute('value')),
+        mechanisms: Array.from(item.getElementsByTagName('link'))
+          .filter(l => l.getAttribute('type') === 'boardgamemechanic')
+          .map(l => l.getAttribute('value'))
       };
     } catch (err) {
       console.error('BGG API Detail Fetch Error:', err);
@@ -64,18 +81,29 @@ export const bggService = {
     }
   },
 
-  extractBestPlayerCount(pollData) {
-    if (!pollData) return '';
+  /**
+   * XML Poll 데이터에서 최적 인원을 추출합니다.
+   */
+  extractBestPlayerCountXml(pollElement) {
+    if (!pollElement) return '';
     try {
+      const results = Array.from(pollElement.getElementsByTagName('results'));
       let best = { count: '', votes: -1 };
-      Object.entries(pollData).forEach(([count, data]) => {
-        const bestVotes = parseInt(data.best) || 0;
+      
+      results.forEach(res => {
+        const numPlayers = res.getAttribute('numplayers');
+        // 'Best'에 투표된 수 확인
+        const resultNodes = Array.from(res.getElementsByTagName('result'));
+        const bestNode = resultNodes.find(rn => rn.getAttribute('value') === 'Best');
+        const bestVotes = parseInt(bestNode?.getAttribute('numvotes')) || 0;
+        
         if (bestVotes > best.votes) {
-          best = { count, votes: bestVotes };
+          best = { count: numPlayers, votes: bestVotes };
         }
       });
       return best.count;
-    } catch {
+    } catch (e) {
+      console.error('최적 인원 추출 실패:', e);
       return '';
     }
   }

@@ -147,61 +147,66 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
     try {
       const devPath = `/boardlife/game/${game.boardlifeId}`;
       const prodUrl = `https://boardlife.co.kr/game/${game.boardlifeId}`;
-      const htmlText = await proxyFetchHtml(devPath, prodUrl);
+      
+      let htmlText = '';
+      try {
+        htmlText = await proxyFetchHtml(devPath, prodUrl);
+      } catch (blErr) {
+        console.warn('보드라이프 수집 실패(보안 차단 가능성):', blErr);
+        // 보드라이프 수집에 실패하더라도 이미 BGG ID가 있다면 계속 진행
+      }
 
-      if (htmlText) {
-        const bl = extractDetailsFromHtml(htmlText);
+      const bl = htmlText ? extractDetailsFromHtml(htmlText) : {};
+      
+      // BGG ID 추출
+      let bggId = game.bggId;
+      if (!bggId && htmlText) {
+        const bggMatch = htmlText.match(/boardgamegeek\.com\/(?:boardgame|boardgameexpansion|thing)\/(\d+)/i);
+        if (bggMatch) bggId = bggMatch[1];
+      }
+
+      // BGG 데이터 수집
+      let bggData = null;
+      if (bggId) {
+        try {
+          bggData = await bggService.getGameDetails(bggId, game.type === 'expansion' ? 'boardgameexpansion' : 'boardgame');
+        } catch (bggErr) {
+          console.error('BGG 보강 실패:', bggErr);
+        }
+      }
+
+      if (htmlText || bggData) {
         setEditData(prev => ({
           ...prev,
-          year: bl.year || prev.year,
+          // BGG 우선 데이터
+          year: bggData?.year || bl.year || prev.year,
+          minPlayers: bggData?.minPlayers || bl.minPlayers || prev.minPlayers,
+          maxPlayers: bggData?.maxPlayers || bl.maxPlayers || prev.maxPlayers,
+          playingTime: bggData?.playingTime || bl.playingTime || prev.playingTime,
+          rating: bggData?.rating || bl.rating || prev.rating,
+          weight: bggData?.weight || bl.weight || prev.weight,
+          bestPlayerCount: bggData?.bestPlayerCount || bl.bestPlayerCount || prev.bestPlayerCount,
+          // 보드라이프 우선 데이터
           category: bl.category || prev.category,
           theme: bl.theme || prev.theme,
           mechanisms: bl.mechanisms || prev.mechanisms,
-          minPlayers: bl.minPlayers || prev.minPlayers,
-          maxPlayers: bl.maxPlayers || prev.maxPlayers,
-          playingTime: bl.playingTime || prev.playingTime,
-          rating: bl.rating || prev.rating,
-          weight: bl.weight || prev.weight,
-          bestPlayerCount: bl.bestPlayerCount || prev.bestPlayerCount,
+          bggId: bggId || prev.bggId,
         }));
 
-        // BGG 보강
-        let bggId = game.bggId;
-        if (!bggId) {
-          const bggMatch = htmlText.match(/boardgamegeek\.com\/(?:boardgame|boardgameexpansion|thing)\/(\d+)/i);
-          if (bggMatch) bggId = bggMatch[1];
-        }
-
-        if (bggId) {
+        if (bggData?.description) {
           try {
-            const bggData = await bggService.getGameDetails(bggId, game.type === 'expansion' ? 'boardgameexpansion' : 'boardgame');
-            if (bggData) {
-              setEditData(prev => ({
-                ...prev,
-                weight: prev.weight || bggData.weight,
-                rating: prev.rating || bggData.rating,
-                bestPlayerCount: prev.bestPlayerCount || bggData.bestPlayerCount,
-                minPlayers: prev.minPlayers || bggData.minPlayers,
-                maxPlayers: prev.maxPlayers || bggData.maxPlayers,
-                playingTime: prev.playingTime || bggData.playingTime,
-                year: prev.year || bggData.year,
-                bggId,
-              }));
-
-              if (bggData.description) {
-                const translated = await translateToKorean(
-                  bggData.description.replace(/<[^>]+>/g, '').replace(/&#10;/g, ' ').trim()
-                );
-                if (translated) setEditData(prev => ({ ...prev, description: translated }));
-              }
-            }
-          } catch (bggErr) {
-            console.error('BGG 보강 실패:', bggErr);
+            const translated = await translateToKorean(
+              bggData.description.replace(/<[^>]+>/g, '').replace(/&#10;/g, ' ').trim()
+            );
+            if (translated) setEditData(prev => ({ ...prev, description: translated }));
+          } catch (transErr) {
+            console.error('설명 번역 실패:', transErr);
           }
         }
+        
         alert('데이터를 성공적으로 불러왔습니다. 내용을 확인하신 후 [저장]을 눌러주세요.');
       } else {
-        alert('데이터를 가져오는데 실패했습니다.');
+        alert('데이터를 가져오는데 실패했습니다. 보드라이프 보안 차단 여부와 BGG ID를 확인해 주세요.');
       }
     } catch (err) {
       console.error('Fetch Info Error:', err);

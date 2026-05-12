@@ -117,6 +117,11 @@ export const translateToKorean = async (text) => {
   }
 };
 
+/**
+ * 보드라이프 HTML에서 세부 정보를 추출합니다.
+ * 참고: 수치 데이터(인원, 시간, 평점, 난이도, 연도)는 현재 BGG 데이터를 최우선으로 하며,
+ * 이 함수에서 추출된 값은 BGG 데이터가 없을 경우의 폴백(Fallback) 용도로 사용됩니다.
+ */
 export const extractDetailsFromHtml = (htmlText) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlText, "text/html");
