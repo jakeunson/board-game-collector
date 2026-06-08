@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, User, Mail, Check, RotateCcw, Ban, Trash2 } from 'lucide-react';
+import { X, Calendar, User, Mail, Check, RotateCcw, Ban, Trash2, Clock } from 'lucide-react';
 import { collection, getDocs, updateDoc, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useGames } from '../../contexts/GameContext';
@@ -113,11 +113,14 @@ export default function RentalManager({ onClose }) {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                     <div>
                       <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>{req.gameName}</h4>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', marginTop: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <Mail size={14} /> {req.email}
                         </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="신청 일자">
+                          <Clock size={14} /> {req.requestedAt ? req.requestedAt.split('T')[0] : '-'}
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="대여 기간">
                           <Calendar size={14} /> {req.rentDate} ~ {req.returnDate}
                         </span>
                       </div>

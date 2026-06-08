@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Dice5 } from 'lucide-react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from './firebase';
 
 // Contexts
 import { GameProvider, useGames } from './contexts/GameContext';
@@ -34,6 +36,23 @@ function AppContent() {
 
   const openModal = name => setActiveModal(name);
   const closeModal = () => setActiveModal(null);
+
+  useEffect(() => {
+    if (isAdmin) {
+      const checkPendingRequests = async () => {
+        try {
+          const q = query(collection(db, 'rentalRequests'), where('status', '==', 'pending'));
+          const snapshot = await getDocs(q);
+          if (!snapshot.empty) {
+            openModal('rental');
+          }
+        } catch (error) {
+          console.error("Failed to check pending rental requests:", error);
+        }
+      };
+      checkPendingRequests();
+    }
+  }, [isAdmin]);
 
   const handleAdminAction = action => {
     if (isAdmin) {
