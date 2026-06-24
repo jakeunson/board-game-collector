@@ -18,6 +18,8 @@ import GameInfoSection from './detail/GameInfoSection';
 import RentRequestForm from './detail/RentRequestForm';
 import ExpansionRelations from './detail/ExpansionRelations';
 import ExternalLinks from './detail/ExternalLinks';
+import AdminEditFields from './detail/AdminEditFields';
+import DangerButton from '../../shared/components/DangerButton';
 
 export default function GameDetail({ game: initialGame, onClose, onDelete, onUpdate, onGameChange }) {
   const { gameCollection, updateGame, isAdmin } = useGames();
@@ -340,21 +342,9 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                 onEditDataChange={handleInputChange}
               />
 
-              {/* 구분 / 확장판 연결 (편집 모드) */}
+              {/* 관리자 편집 필드 & 확장판 연결 (편집 모드) */}
               {isEditing && (
-                <div className="section-box">
-                  <div className="form-group">
-                    <label className="form-label">구분 (기본판 / 확장판)</label>
-                    <select
-                      value={editData.type}
-                      onChange={e => handleInputChange('type', e.target.value)}
-                      className="form-input"
-                    >
-                      <option value="base">기본판</option>
-                      <option value="expansion">확장판</option>
-                    </select>
-                  </div>
-
+                <AdminEditFields editData={editData} onInputChange={handleInputChange}>
                   <ExpansionRelations
                     game={game}
                     isEditing={isEditing}
@@ -363,37 +353,7 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
                     onToggleExpansion={handleToggleExpansion}
                     onGameChange={onGameChange}
                   />
-
-                  {/* 비공개 토글 */}
-                  <div style={{ marginTop: '8px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={editData.isHidden}
-                        onChange={e => handleInputChange('isHidden', e.target.checked)}
-                        style={{ width: '16px', height: '16px', accentColor: '#f43f5e' }}
-                      />
-                      <span style={{ color: editData.isHidden ? '#f43f5e' : 'inherit' }}>
-                        🔒 관리자만 보기 (비공개)
-                      </span>
-                    </label>
-                    <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px', paddingLeft: '24px' }}>
-                      체크 시 비로그인 사용자의 목록 및 검색 결과에서 제외됩니다.
-                    </p>
-                  </div>
-
-                  {/* ID 편집 */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)', marginTop: '4px' }}>
-                    <div className="form-group">
-                      <label className="form-label">보드라이프 ID</label>
-                      <input value={editData.boardlifeId} onChange={e => handleInputChange('boardlifeId', e.target.value)} className="form-input" />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">BGG ID</label>
-                      <input value={editData.bggId} onChange={e => handleInputChange('bggId', e.target.value)} className="form-input" />
-                    </div>
-                  </div>
-                </div>
+                </AdminEditFields>
               )}
 
               {/* 확장판 관계 (뷰 모드) */}
@@ -411,17 +371,15 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
               {/* 삭제 버튼 */}
               {!isEditing && (isDev || isAdmin) && (
                 <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', paddingTop: '16px' }}>
-                  <button
+                  <DangerButton
                     onClick={async () => {
                       const deleted = await onDelete(game.id);
                       if (deleted) onClose();
                     }}
-                    className="btn-danger"
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220, 38, 38, 0.05)'; e.currentTarget.style.borderColor = '#ef4444'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.2)'; }}
+                    icon={Trash2}
                   >
-                    <Trash2 size={14} /> 컬렉션에서 삭제
-                  </button>
+                    컬렉션에서 삭제
+                  </DangerButton>
                 </div>
               )}
             </div>

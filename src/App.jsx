@@ -12,10 +12,13 @@ import { ThemeProvider } from './contexts/ThemeContext';
 // Components
 import Header from './shared/components/Header';
 import Footer from './shared/components/Footer';
+import LoadingSpinner from './shared/components/LoadingSpinner';
+import EmptyState from './shared/components/EmptyState';
 import FilterBar from './features/filters/FilterBar';
 import GameCard from './features/games/GameCard';
 import GameListItem from './features/games/GameListItem';
 import GameDetail from './features/games/GameDetail';
+import GameList from './features/games/GameList';
 import AddGameModal from './features/admin/AddGameModal';
 import BggEnricher from './features/admin/BggEnricher';
 import AdminAuthModal from './features/admin/AdminAuthModal';
@@ -73,30 +76,11 @@ function AppContent() {
 
         {/* ── Content ── */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '100px 0' }}>
-            <div className="animate-fade-in">
-              <Dice5 size={48} className="animate-spin" style={{ color: 'var(--accent-primary)', marginBottom: '16px' }} />
-              <p style={{ color: 'var(--text-secondary)', fontSize: '16px' }}>보드게임을 불러오는 중...</p>
-            </div>
-          </div>
+          <LoadingSpinner />
         ) : filteredCollection.length === 0 ? (
-          <div className="glass animate-slide-up" style={{ textAlign: 'center', padding: '80px', borderRadius: '24px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>검색 결과가 없습니다</h3>
-            <p style={{ color: 'var(--text-secondary)' }}>다른 검색어나 필터를 적용해 보세요.</p>
-          </div>
-        ) : viewMode === 'grid' ? (
-          <div className="grid-layout animate-slide-up">
-            {filteredCollection.map(game => (
-              <GameCard key={game.id} game={game} onClick={() => setSelectedGame(game)} />
-            ))}
-          </div>
+          <EmptyState />
         ) : (
-          <div className="list-layout animate-slide-up">
-            {filteredCollection.map(game => (
-              <GameListItem key={game.id} game={game} onClick={() => setSelectedGame(game)} />
-            ))}
-          </div>
+          <GameList viewMode={viewMode} games={filteredCollection} onGameSelect={setSelectedGame} />
         )}
 
         <Footer
