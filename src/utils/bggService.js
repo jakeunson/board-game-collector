@@ -29,15 +29,27 @@ export const bggService = {
       const prodUrl = `https://boardgamegeek.com/xmlapi2/thing?id=${bggId}&stats=1`;
 
       // XML 텍스트를 가져오기 위해 proxyFetchHtml 사용
-      const xmlText = await proxyFetchHtml(devPath, prodUrl, { headers });
+      let xmlText = await proxyFetchHtml(devPath, prodUrl, { headers });
       if (!xmlText || xmlText.includes('Unauthorized')) {
         console.error('BGG API 인증 실패 또는 데이터 없음');
         return null;
       }
 
       const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-      const item = xmlDoc.getElementsByTagName('item')[0];
+      let xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      let item = xmlDoc.getElementsByTagName('item')[0];
+
+      // BGG 202 큐 대기 상태 대응 (item이 없을 때 최대 2회 재시도)
+      for (let attempt = 1; attempt <= 2 && !item; attempt++) {
+        console.warn(`BGG XML 준비 중... 1.5초 후 재시도 (${attempt}/2)`);
+        await new Promise(r => setTimeout(r, 1500));
+        xmlText = await proxyFetchHtml(devPath, prodUrl, { headers });
+        if (xmlText && !xmlText.includes('Unauthorized')) {
+          xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+          item = xmlDoc.getElementsByTagName('item')[0];
+        }
+      }
+
       if (!item) return null;
 
       // XML에서 값 추출을 위한 헬퍼

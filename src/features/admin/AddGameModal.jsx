@@ -10,7 +10,7 @@ import {
   extractDetailsFromHtml 
 } from '../../utils/gameDataExtractor';
 import { bggService } from '../../utils/bggService';
-import { proxyFetchHtml } from '../../utils/proxyFetch';
+import { proxyFetchHtml, proxyFetchJson } from '../../utils/proxyFetch';
 import { Dice5, Search } from 'lucide-react';
 
 export default function AddGameModal({ onClose, onAddSuccess }) {
@@ -65,8 +65,12 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
 
       if (!htmlText) throw new Error('보드라이프 페이지를 불러오지 못했습니다.');
       
-      // Cloudflare 차단 감지
-      if (htmlText.includes('Just a moment...') || htmlText.includes('cloudflare')) {
+      // Cloudflare 차단 감지 (도전 페이지 타이틀 또는 헤더 확인)
+      if (
+        htmlText.includes('<title>Just a moment...</title>') ||
+        htmlText.includes('<title>Attention Required! | Cloudflare</title>') ||
+        htmlText.includes('Enable JavaScript and cookies to continue')
+      ) {
         throw new Error('보안 확인(Cloudflare)에 의해 보드라이프 수집이 차단되었습니다. 잠시 후 다시 시도하거나 BGG ID를 확인해 주세요.');
       }
 
@@ -249,22 +253,11 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
         
         if (!bggId && game.boardlifeId) {
           try {
-            const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            let blUrl = `/boardlife/game/${game.boardlifeId}`;
-            if (!isDev) {
-              blUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://boardlife.co.kr/game/${game.boardlifeId}`)}`;
-            }
+            const blTargetUrl = `https://boardlife.co.kr/game/${game.boardlifeId}`;
+            const blDevPath = `/boardlife/game/${game.boardlifeId}`;
+            const htmlText = await proxyFetchHtml(blDevPath, blTargetUrl);
             
-            const blRes = await fetch(blUrl);
-            if (blRes.ok) {
-              let htmlText = '';
-              if (isDev) {
-                htmlText = await blRes.text();
-              } else {
-                const allOriginsData = await blRes.json();
-                htmlText = allOriginsData.contents;
-              }
-              
+            if (htmlText) {
               const bggMatch = htmlText.match(/boardgamegeek\.com\/(boardgame|boardgameexpansion|thing)\/(\d+)/i);
               if (bggMatch) {
                 const type = bggMatch[1];
@@ -279,39 +272,25 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
         
         if (bggId) {
           try {
-            const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            let bggUrl = `/bgg-api/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
-            if (!isDev) {
-              const targetBggUrl = `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
-              bggUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetBggUrl)}`;
-            }
-
-            const bggRes = await fetch(bggUrl, isDev ? { headers: { 'Accept': 'application/json' } } : {});
-            if (bggRes.ok) {
-              let bggData;
-              if (isDev) {
-                bggData = await bggRes.json();
-              } else {
-                const allOriginsData = await bggRes.json();
-                bggData = JSON.parse(allOriginsData.contents);
-              }
+            const targetBggUrl = `https://api.geekdo.com/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
+            const devBggPath = `/bgg-api/api/geekitems?objecttype=thing&subtype=${bggSubtype}&objectid=${bggId}&ajax=1&nosession=1`;
+            const bggData = await proxyFetchJson(devBggPath, targetBggUrl);
+            
+            const item = bggData?.item;
+            if (item && item.description) {
+              const rawDesc = item.description;
+              const docParser = new DOMParser().parseFromString(rawDesc, "text/html");
+              const cleanDesc = docParser.documentElement.textContent;
               
-              const item = bggData?.item;
-              if (item && item.description) {
-                const rawDesc = item.description;
-                const docParser = new DOMParser().parseFromString(rawDesc, "text/html");
-                const cleanDesc = docParser.documentElement.textContent;
-                
-                setBatchProgress(`[${i + 1}/${games.length}] ${game.name} 설명 번역 중...`);
-                const translated = await translateToKorean(cleanDesc);
-                
-                if (translated && translated.length > 50) {
-                  await updateDoc(doc(db, "games", game.docId), {
-                    description: translated,
-                    bggId: bggId
-                  });
-                  setBatchProgress(`[${i + 1}/${games.length}] ${game.name} 업데이트 성공`);
-                }
+              setBatchProgress(`[${i + 1}/${games.length}] ${game.name} 설명 번역 중...`);
+              const translated = await translateToKorean(cleanDesc);
+              
+              if (translated && translated.length > 50) {
+                await updateDoc(doc(db, "games", game.docId), {
+                  description: translated,
+                  bggId: bggId
+                });
+                setBatchProgress(`[${i + 1}/${games.length}] ${game.name} 업데이트 성공`);
               }
             }
           } catch (bggErr) {
