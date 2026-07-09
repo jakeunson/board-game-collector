@@ -62,14 +62,26 @@ export const bggService = {
       const weight = stats?.getElementsByTagName('averageweight')[0]?.getAttribute('value') || '';
       
       // 권장 인원 투표 결과
+      // 권장 인원 투표 결과
       const userPlayersPoll = Array.from(item.getElementsByTagName('poll'))
         .find(p => p.getAttribute('name') === 'suggested_numplayers');
       const bestPlayerCount = this.extractBestPlayerCountXml(userPlayersPoll);
 
+      const nameNodes = Array.from(item.getElementsByTagName('name'));
+      const primaryNode = nameNodes.find(n => n.getAttribute('type') === 'primary') || nameNodes[0];
+      const englishName = primaryNode?.getAttribute('value') || getVal(item, 'name');
+      
+      // 한국어 이름(한글이 포함된 Alternate Name) 찾기
+      const koreanNode = nameNodes.find(n => {
+        const val = n.getAttribute('value') || '';
+        return /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(val);
+      });
+      const koreanName = koreanNode?.getAttribute('value') || englishName;
+
       return {
         bggId: item.getAttribute('id') || '',
-        name: getVal(item, 'name'), // BGG XML에서 name은 보통 첫 번째 항목이 primary
-        englishName: getVal(item, 'name'),
+        name: koreanName,
+        englishName: englishName,
         year: getVal(item, 'yearpublished'),
         description: getText(item, 'description'),
         image: getText(item, 'image'),
@@ -90,6 +102,84 @@ export const bggService = {
     } catch (err) {
       console.error('BGG API Detail Fetch Error:', err);
       return null;
+    }
+  },
+
+  /**
+   * BGG에서 게임명 또는 ID로 검색합니다.
+   * @param {string} query 검색어
+   * @returns {Promise<Array>} 검색 결과 목록
+   */
+  async searchGames(query) {
+    if (!query) return [];
+    try {
+      const trimmed = query.trim();
+      const token = (typeof import.meta.env !== 'undefined') 
+        ? import.meta.env.VITE_BGG_TOKEN 
+        : (typeof process !== 'undefined' ? process.env.VITE_BGG_TOKEN : null);
+      
+      const headers = {
+        'Accept': 'application/xml',
+        'User-Agent': 'BoardGameCollectorApp/2.0',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      };
+
+      // 만약 숫자로만 구성된 ID라면 direct ID 조회도 시도
+      let idResults = [];
+      if (/^\d+$/.test(trimmed)) {
+        try {
+          const detail = await this.getGameDetails(trimmed, 'boardgame');
+          if (detail) {
+            idResults.push({
+              bggId: detail.bggId,
+              type: 'base',
+              name: detail.name !== detail.englishName ? `${detail.name} (${detail.englishName})` : detail.name,
+              year: detail.year
+            });
+          }
+        } catch {
+          // ID 직접 조회 실패 시 일반 검색 계속 진행
+        }
+      }
+
+      const devPath = `/xmlapi2/search?query=${encodeURIComponent(trimmed)}&type=boardgame,boardgameexpansion`;
+      const prodUrl = `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(trimmed)}&type=boardgame,boardgameexpansion`;
+
+      const xmlText = await proxyFetchHtml(devPath, prodUrl, { headers });
+      if (!xmlText || xmlText.includes('Unauthorized')) {
+        return idResults;
+      }
+
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      const items = Array.from(xmlDoc.getElementsByTagName('item'));
+
+      const searchResults = items.map(item => {
+        const bggId = item.getAttribute('id') || '';
+        const typeAttr = item.getAttribute('type') || 'boardgame';
+        const type = typeAttr === 'boardgameexpansion' ? 'expansion' : 'base';
+        
+        const nameNode = item.getElementsByTagName('name')[0];
+        const name = nameNode?.getAttribute('value') || 'Unknown';
+        
+        const yearNode = item.getElementsByTagName('yearpublished')[0];
+        const year = yearNode?.getAttribute('value') || '';
+
+        return { bggId, type, name, year };
+      });
+
+      // ID 검색 결과와 일반 검색 결과 병합 (중복 제거)
+      const combined = [...idResults];
+      searchResults.forEach(res => {
+        if (!combined.some(c => c.bggId === res.bggId)) {
+          combined.push(res);
+        }
+      });
+
+      return combined.slice(0, 20); // 최대 20개까지 반환
+    } catch (err) {
+      console.error('BGG Search Error:', err);
+      return [];
     }
   },
 

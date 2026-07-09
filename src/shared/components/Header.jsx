@@ -72,7 +72,7 @@ export default function Header({ onOpenAddModal }) {
         </button>
         {isAdmin && (
           <button className="btn-primary" onClick={onOpenAddModal} style={{ padding: isMobile ? '6px 12px' : '10px 20px', fontSize: isMobile ? '12px' : '14px' }}>
-            {isMobile ? '+ 추가' : '+ URL로 게임 추가'}
+            {isMobile ? '+ 추가' : '+ 게임 추가'}
           </button>
         )}
       </div>

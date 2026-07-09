@@ -1,5 +1,17 @@
 import { isDev } from './envUtils.js';
 
+export const THEME_KEYWORDS = [
+  'Fantasy', 'Science Fiction', 'Horror', 'Medieval', 'Ancient', 'Animals', 'Zombies',
+  'Pirates', 'Mythology', 'Renaissance', 'Space Exploration', 'Western', 'Mafia',
+  'Spies/Secret Agents', 'Trains', 'Nautical', 'Prehistoric', 'Age of Reason',
+  'American Indian Wars', 'American Civil War', 'American Revolutionary War', 'Arabian',
+  'Aviation / Flight', 'Comic Book / Strip', 'Cyberpunk', 'Environmental', 'Medical',
+  'Movies / TV / Radio theme', 'Music', 'Novel-based', 'Post-Napoleonic', 'Religious',
+  'Sports', 'Video Game Theme', 'World War I', 'World War II', 'Wargame', 'Political',
+  'Farming', 'Industry / Manufacturing', 'Adventure', 'Exploration', 'City Building',
+  'Civilization', 'Murder/Mystery', 'Humor', 'Territory Building'
+];
+
 export const CATEGORY_MAP = {
   'Deduction': '추리',
   'Murder/Mystery': '미스터리',
@@ -28,7 +40,48 @@ export const CATEGORY_MAP = {
   'Horror': '공포',
   'Miniatures': '피규어',
   'Science Fiction': 'SF',
-  'Zombies': '좀비'
+  'Zombies': '좀비',
+  'Farming': '농업',
+  'Industry / Manufacturing': '산업/제조',
+  'Renaissance': '르네상스',
+  'Pirates': '해적',
+  'Mythology': '신화',
+  'Western': '서부시대',
+  'Mafia': '마피아',
+  'Spies/Secret Agents': '스파이/첩보',
+  'Trains': '기차',
+  'Nautical': '항해/해양',
+  'Prehistoric': '선사시대',
+  'Age of Reason': '이성시대',
+  'American Indian Wars': '아메리카 원주민 전쟁',
+  'American Civil War': '남북전쟁',
+  'American Revolutionary War': '독립전쟁',
+  'Arabian': '아라비아',
+  'Aviation / Flight': '항공/비행',
+  'Comic Book / Strip': '코믹북/만화',
+  'Cyberpunk': '사이버펑크',
+  'Environmental': '환경/자연',
+  'Medical': '의학',
+  'Movies / TV / Radio theme': '영화/TV',
+  'Music': '음악',
+  'Novel-based': '소설 기반',
+  'Post-Napoleonic': '나폴레옹 이후',
+  'Religious': '종교',
+  'Sports': '스포츠',
+  'Video Game Theme': '비디오게임 테마',
+  'World War I': '제1차 세계대전',
+  'World War II': '제2차 세계대전',
+  'Wargame': '워게임',
+  'Political': '정치',
+  'Territory Building': '영토 확장',
+  'Print & Play': 'PnP(출력 플레이)',
+  'Humor': '유머',
+  'Children\'s Game': '어린이 게임',
+  'Educational': '교육용',
+  'Word Game': '단어 게임',
+  'Trivia': '퀴즈/상식',
+  'Collectible Components': '수집형 컴포넌트',
+  'Real-time': '실시간'
 };
 
 export const MECHANISM_MAP = {
@@ -36,23 +89,90 @@ export const MECHANISM_MAP = {
   'Storytelling': '스토리텔링',
   'Hand Management': '핸드 관리',
   'Grid Movement': '격자 이동',
-  'Area Majority / Influence': '영향력',
+  'Area Majority / Influence': '영향력 / 지역 장악',
   'Dice Rolling': '주사위 굴리기',
   'Tile Placement': '타일 놓기',
   'Drafting': '드래프트',
   'Action Retrieval': '액션 회수',
-  'Variable Player Powers': '가변 능력',
-  'Deck, Bag, and Pool Building': '덱빌딩',
+  'Variable Player Powers': '가변 플레이어 능력',
+  'Deck, Bag, and Pool Building': '덱/백/풀 빌딩',
   'Solo / Solitaire Game': '1인 전용',
-  'Campaign / Battle Card Driven': '캠페인',
+  'Campaign / Battle Card Driven': '캠페인 / 전투 카드 구동',
   'Worker Placement': '일꾼 놓기',
   'Set Collection': '셋 컬렉션',
   'Memory': '기억력',
   'Pattern Building': '패턴 구축',
-  'Take That': '인터랙션',
+  'Take That': '인터랙션 / 직접 공격',
   'Voting': '투표',
-  'Push Your Luck': '운 시험',
-  'Simultaneous Action Selection': '동시 행동 선택'
+  'Push Your Luck': '운 시험하기',
+  'Simultaneous Action Selection': '동시 행동 선택',
+  'Automatic Resource Growth': '자원 자동 생성',
+  'Closed Drafting': '비공개 드래프트',
+  'Enclosure': '울타리 치기 / 영역 둘러싸기',
+  'Increase Value of Unchosen Resources': '미선택 자원 가치 증가',
+  'Turn Order: Claim Action': '턴 순서: 액션 선점',
+  'Turn Order: Stat-Based': '턴 순서: 스탯 기반',
+  'Turn Order: Progressive': '턴 순서: 순차적',
+  'Turn Order: Auction': '턴 순서: 경매',
+  'Auction / Bidding': '경매 / 입찰',
+  'Area Movement': '지역 이동',
+  'Point to Point Movement': '지점 간 이동',
+  'Network and Route Building': '네트워크 및 경로 구축',
+  'Trading': '교역 / 거래',
+  'Secret Unit Deployment': '비밀 유닛 배치',
+  'Role Playing': '역할 수행(RPG)',
+  'Hexagon Grid': '육각 격자(헥스)',
+  'Modular Board': '모듈식 보드',
+  'Paper-and-Pencil': '종이와 연필',
+  'Roll / Spin and Move': '굴려서 이동',
+  'Team-Based Game': '팀 대항전',
+  'Variable Setup': '가변 셋업',
+  'Action Points': '액션 포인트',
+  'Chaining': '체인(연쇄) 효과',
+  'Contracts': '계약 / 의뢰 달성',
+  'End Game Bonuses': '게임 종료 보너스',
+  'Events': '이벤트',
+  'Market': '시장',
+  'Tech Trees / Tech Tracks': '테크 트리 / 기술 트랙',
+  'Track Movement': '트랙 이동',
+  'Income': '수입 시스템',
+  'Loans': '대출 시스템',
+  'Victory Points as a Resource': '자원으로서의 승점',
+  'Scenario / Mission / Campaign Game': '시나리오 / 미션 / 캠페인',
+  'Traitor Game': '배신자 시스템',
+  'Semi-Cooperative Game': '반협력',
+  'Hidden Movement': '비밀 이동',
+  'King of the Hill': '고지 점령',
+  'Legacy Game': '레거시',
+  'Open Drafting': '공개 드래프트',
+  'Pick-up and Deliver': '픽업 앤 딜리버리',
+  'Player Elimination': '플레이어 탈락',
+  'Race': '레이싱',
+  'Rock-Paper-Scissors': '가위바위보',
+  'Rondel': '론델 시스템',
+  'Trick-taking': '트릭 테이킹',
+  'Tug of War': '줄다리기'
+};
+
+export const separateBggCategoriesAndThemes = (categories = []) => {
+  if (!Array.isArray(categories) || categories.length === 0) {
+    return { categories: [], themes: [] };
+  }
+  const cats = [];
+  const themes = [];
+  
+  categories.forEach(item => {
+    if (THEME_KEYWORDS.includes(item)) {
+      themes.push(item);
+    } else {
+      cats.push(item);
+    }
+  });
+
+  if (cats.length === 0) {
+    return { categories: [...categories], themes };
+  }
+  return { categories: cats, themes };
 };
 
 export const translateText = (text, map) => {
@@ -61,6 +181,28 @@ export const translateText = (text, map) => {
     const trimmed = item.trim();
     return map[trimmed] || trimmed;
   }).join(', ');
+};
+
+export const translateTermList = async (text, map) => {
+  if (!text) return '';
+  const items = text.split(',').map(item => item.trim()).filter(Boolean);
+  const translated = [];
+  
+  for (const item of items) {
+    if (map[item]) {
+      translated.push(map[item]);
+    } else if (/[a-zA-Z]/.test(item)) {
+      try {
+        const ko = await translateToKorean(item);
+        translated.push(ko || item);
+      } catch {
+        translated.push(item);
+      }
+    } else {
+      translated.push(item);
+    }
+  }
+  return translated.join(', ');
 };
 
 export const splitIntoChunks = (text, maxLength = 1000) => {
