@@ -30,7 +30,7 @@ import ChangePasswordModal from './features/admin/ChangePasswordModal';
  *   'addGame' | 'enricher' | 'auth' | 'rental' | 'login' | 'changePassword' | null
  */
 function AppContent() {
-  const { loading, removeGame, updateGame, isAdmin } = useGames();
+  const { loading, gameCollection, removeGame, updateGame, isAdmin } = useGames();
   const { filteredCollection, viewMode } = useFilters();
 
   const [activeModal, setActiveModal] = useState(null);
@@ -39,6 +39,51 @@ function AppContent() {
 
   const openModal = name => setActiveModal(name);
   const closeModal = () => setActiveModal(null);
+
+  // --- URL 딥링크 동기화 ---
+  const handleGameSelect = (game) => {
+    setSelectedGame(game);
+    if (game) {
+      window.history.pushState({ gameId: game.id }, '', `?game=${game.id}`);
+    }
+  };
+
+  const handleGameClose = () => {
+    setSelectedGame(null);
+    window.history.pushState({}, '', window.location.pathname);
+  };
+
+  // 브라우저 뒤로가기(popstate) 대응
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const gameId = params.get('game');
+      if (gameId && gameCollection.length > 0) {
+        const game = gameCollection.find(g => g.id === gameId);
+        setSelectedGame(game || null);
+      } else {
+        setSelectedGame(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [gameCollection]);
+
+  // 초기 접속 시 URL 파라미터 확인 후 팝업 자동 열기
+  useEffect(() => {
+    if (!loading && gameCollection.length > 0 && !selectedGame) {
+      const params = new URLSearchParams(window.location.search);
+      const gameId = params.get('game');
+      if (gameId) {
+        const game = gameCollection.find(g => g.id === gameId);
+        if (game) {
+          // 히스토리 상태를 일치시켜주기 위해 replaceState 사용
+          window.history.replaceState({ gameId: game.id }, '', `?game=${game.id}`);
+          setSelectedGame(game);
+        }
+      }
+    }
+  }, [loading, gameCollection]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -80,7 +125,7 @@ function AppContent() {
         ) : filteredCollection.length === 0 ? (
           <EmptyState />
         ) : (
-          <GameList viewMode={viewMode} games={filteredCollection} onGameSelect={setSelectedGame} />
+          <GameList viewMode={viewMode} games={filteredCollection} onGameSelect={handleGameSelect} />
         )}
 
         <Footer
@@ -95,7 +140,7 @@ function AppContent() {
       {activeModal === 'addGame' && createPortal(
         <AddGameModal
           onClose={closeModal}
-          onAddSuccess={game => { closeModal(); setSelectedGame(game); }}
+          onAddSuccess={game => { closeModal(); handleGameSelect(game); }}
         />,
         document.body
       )}
@@ -136,10 +181,10 @@ function AppContent() {
         <GameDetail
           key={selectedGame.id}
           game={selectedGame}
-          onClose={() => setSelectedGame(null)}
+          onClose={handleGameClose}
           onDelete={removeGame}
           onUpdate={updateGame}
-          onGameChange={setSelectedGame}
+          onGameChange={handleGameSelect}
         />,
         document.body
       )}

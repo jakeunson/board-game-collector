@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Save, Undo, Edit2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Save, Undo, Edit2, Link, Check } from 'lucide-react';
 
 /**
  * GameDetail 모달의 상단 헤더 영역
@@ -21,6 +21,13 @@ export default function GameDetailHeader({
       window.location.hostname === '127.0.0.1');
 
   const canEdit = isDev || isAdmin;
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
 
   return (
     <div className="detail-modal-header">
@@ -52,6 +59,14 @@ export default function GameDetailHeader({
             </button>
           )
         )}
+
+        <button
+          onClick={handleCopyLink}
+          className="detail-btn-edit"
+          style={{ background: copied ? 'var(--accent-primary)' : 'var(--bg-glass)', color: copied ? 'white' : 'var(--text-primary)', borderColor: copied ? 'var(--accent-primary)' : 'var(--border-subtle)' }}
+        >
+          {copied ? <Check size={14} /> : <Link size={14} />} {copied ? '복사됨' : '링크'}
+        </button>
 
         <button
           onClick={onClose}
