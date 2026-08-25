@@ -155,19 +155,16 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
         htmlText = await proxyFetchHtml(devPath, prodUrl);
       } catch (blErr) {
         console.warn('보드라이프 수집 실패(보안 차단 가능성):', blErr);
-        // 보드라이프 수집에 실패하더라도 이미 BGG ID가 있다면 계속 진행
       }
 
       const bl = htmlText ? extractDetailsFromHtml(htmlText) : {};
       
-      // BGG ID 추출
       let bggId = game.bggId;
       if (!bggId && htmlText) {
         const bggMatch = htmlText.match(/boardgamegeek\.com\/(?:boardgame|boardgameexpansion|thing)\/(\d+)/i);
         if (bggMatch) bggId = bggMatch[1];
       }
 
-      // BGG 데이터 수집
       let bggData = null;
       if (bggId) {
         try {
@@ -180,7 +177,6 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
       if (htmlText || bggData) {
         setEditData(prev => ({
           ...prev,
-          // BGG 우선 데이터
           year: bggData?.year || bl.year || prev.year,
           minPlayers: bggData?.minPlayers || bl.minPlayers || prev.minPlayers,
           maxPlayers: bggData?.maxPlayers || bl.maxPlayers || prev.maxPlayers,
@@ -188,7 +184,6 @@ export default function GameDetail({ game: initialGame, onClose, onDelete, onUpd
           rating: bggData?.rating || bl.rating || prev.rating,
           weight: bggData?.weight || bl.weight || prev.weight,
           bestPlayerCount: bggData?.bestPlayerCount || bl.bestPlayerCount || prev.bestPlayerCount,
-          // 보드라이프 우선 데이터
           category: bl.category || prev.category,
           theme: bl.theme || prev.theme,
           mechanisms: bl.mechanisms || prev.mechanisms,

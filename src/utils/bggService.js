@@ -208,5 +208,38 @@ export const bggService = {
       console.error('최적 인원 추출 실패:', e);
       return '';
     }
+  },
+
+  /**
+   * BGG Files 페이지에서 룰북 및 관련 PDF 파일 링크 목록을 추출합니다.
+   * @param {string} bggId BGG ID
+   * @returns {Promise<Array<{title: string, url: string}>>}
+   */
+  async getBggRulebookFiles(bggId) {
+    if (!bggId) return [];
+    try {
+      const devPath = `/xmlapi2/files?thingid=${bggId}`;
+      const prodUrl = `https://boardgamegeek.com/boardgame/${bggId}/files`;
+
+      const htmlText = await proxyFetchHtml(devPath, prodUrl);
+      if (!htmlText) return [];
+
+      const fileMatches = [...htmlText.matchAll(/href="(\/filepage\/\d+\/[^"]+)"[^>]*>([^<]+)</gi)];
+      const results = [];
+      for (const match of fileMatches.slice(0, 10)) {
+        const href = match[1];
+        const title = match[2].trim();
+        if (title && (title.toLowerCase().includes('rule') || title.toLowerCase().includes('pdf') || title.includes('룰') || title.includes('한글') || title.includes('규칙'))) {
+          results.push({
+            title: title,
+            url: `https://boardgamegeek.com${href}`
+          });
+        }
+      }
+      return results;
+    } catch (err) {
+      console.warn('BGG Rulebook Files Fetch Error:', err);
+      return [];
+    }
   }
 };

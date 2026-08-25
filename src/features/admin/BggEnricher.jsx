@@ -2,17 +2,17 @@ import React, { useState } from 'react';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { bggService } from '../../utils/bggService';
+import { boardlifeService } from '../../utils/boardlifeService';
 import { BGG_MAPPING } from '../../data/bggMapping';
 import { X, Play, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /**
- * BGG 데이터 일괄 보강 도구
- * - 이미지나 상세 정보가 없는 게임들을 대상으로 BGG에서 데이터를 가져와 업데이트합니다.
- * - BGG ID가 저장되어 있거나, BGG_MAPPING에 정의된 게임을 우선 처리합니다.
+ * BGG 데이터 및 Boardlife ID 일괄 보강 도구
  */
 export default function BggEnricher({ onDone }) {
+  const [mode, setMode] = useState('bgg'); // 'bgg' or 'boardlife'
   const [log, setLog] = useState([]);
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
@@ -25,6 +25,114 @@ export default function BggEnricher({ onDone }) {
     return !img || img.includes('boardlife.co.kr') || img.includes('no-image');
   };
 
+  const runBggEnrich = async (allGames) => {
+    const toEnrich = allGames.filter(g =>
+      needsImage(g) && (g.bggId || BGG_MAPPING[g.name])
+    );
+
+    if (toEnrich.length === 0) {
+      addLog('보강할 대상 게임이 없습니다.');
+      setRunning(false);
+      return;
+    }
+
+    addLog(`이미지/정보 보강 대상: ${toEnrich.length}개 발견`);
+    let success = 0, failed = 0;
+    setStats({ success: 0, failed: 0, total: toEnrich.length });
+
+    for (let i = 0; i < toEnrich.length; i++) {
+      const game = toEnrich[i];
+      const bggId = game.bggId || BGG_MAPPING[game.name];
+
+      addLog(`[${i + 1}/${toEnrich.length}] ${game.name} (ID: ${bggId}) 처리 중...`);
+
+      try {
+        const data = await bggService.getGameDetails(bggId, game.type === 'expansion' ? 'boardgameexpansion' : 'boardgame');
+
+        if (!data || !data.image) {
+          addLog(`  ✗ 데이터를 찾을 수 없거나 이미지가 없습니다.`);
+          failed++;
+        } else {
+          const update = {
+            image: data.image,
+            thumbnail: data.thumbnail || data.image,
+            bggId: data.bggId,
+            ...(!game.year && data.year && { year: data.year }),
+            ...(!game.minPlayers && data.minPlayers && { minPlayers: data.minPlayers }),
+            ...(!game.maxPlayers && data.maxPlayers && { maxPlayers: data.maxPlayers }),
+            ...(!game.playingTime && data.playingTime && { playingTime: data.playingTime }),
+            ...(!game.rating && data.rating && { rating: data.rating }),
+            ...(!game.weight && data.weight && { weight: data.weight }),
+            ...(!game.description && data.description && { description: data.description }),
+            ...(!game.category && data.categories && { category: data.categories.join(', ') }),
+            ...(!game.mechanisms && data.mechanisms && { mechanisms: data.mechanisms.join(', ') }),
+          };
+
+          await updateDoc(doc(db, 'games', game.docId), update);
+          addLog(`  ✓ 업데이트 완료`);
+          success++;
+        }
+      } catch (e) {
+        addLog(`  ✗ 오류 발생: ${e.message}`);
+        failed++;
+      }
+
+      setStats({ success, failed, total: toEnrich.length });
+      await sleep(1200);
+
+      if ((i + 1) % 10 === 0 && i < toEnrich.length - 1) {
+        addLog(`--- API 부하 방지를 위해 3초간 대기합니다 ---`);
+        await sleep(3000);
+      }
+    }
+
+    addLog(`\n✅ BGG 일괄 보강 완료! (성공: ${success}, 실패: ${failed})`);
+  };
+
+  const runBoardlifeEnrich = async (allGames) => {
+    const toEnrich = allGames.filter(g => !g.boardlifeId);
+
+    if (toEnrich.length === 0) {
+      addLog('Boardlife ID가 누락된 게임이 없습니다. 모든 게임이 등록되어 있습니다!');
+      setRunning(false);
+      return;
+    }
+
+    addLog(`Boardlife ID 미등록 대상: ${toEnrich.length}개 발견`);
+    let success = 0, failed = 0;
+    setStats({ success: 0, failed: 0, total: toEnrich.length });
+
+    for (let i = 0; i < toEnrich.length; i++) {
+      const game = toEnrich[i];
+      addLog(`[${i + 1}/${toEnrich.length}] ${game.name} (${game.englishName || '영문명 없음'}) 검색 중...`);
+
+      try {
+        const blId = await boardlifeService.getBoardlifeIdFromGameName(
+          game.name,
+          game.englishName,
+          game.bggId
+        );
+
+        if (blId) {
+          await updateDoc(doc(db, 'games', game.docId), { boardlifeId: blId });
+          addLog(`  ✓ Boardlife ID 매칭 성공: ${blId}`);
+          success++;
+        } else {
+          addLog(`  ✗ 매칭 실패 (Cloudflare 차단 또는 결과 없음)`);
+          failed++;
+        }
+      } catch (e) {
+        addLog(`  ✗ 오류 발생: ${e.message}`);
+        failed++;
+      }
+
+      setStats({ success, failed, total: toEnrich.length });
+      await sleep(1000);
+    }
+
+    addLog(`\n✅ Boardlife ID 일괄 보강 완료! (성공: ${success}, 실패: ${failed})`);
+  };
+
   const run = async () => {
     setRunning(true);
     addLog('Firebase에서 게임 목록 로딩 중...');
@@ -33,74 +141,11 @@ export default function BggEnricher({ onDone }) {
       const snap = await getDocs(collection(db, 'games'));
       const allGames = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
 
-      // 보강 대상 필터링: BGG ID가 이미 있거나, 이름 매핑이 존재하는 게임 중 이미지가 부실한 것
-      const toEnrich = allGames.filter(g =>
-        needsImage(g) && (g.bggId || BGG_MAPPING[g.name])
-      );
-
-      if (toEnrich.length === 0) {
-        addLog('보강할 대상 게임이 없습니다.');
-        setRunning(false);
-        return;
+      if (mode === 'bgg') {
+        await runBggEnrich(allGames);
+      } else {
+        await runBoardlifeEnrich(allGames);
       }
-
-      addLog(`이미지/정보 보강 대상: ${toEnrich.length}개 발견`);
-
-      let success = 0, failed = 0;
-      setStats({ success: 0, failed: 0, total: toEnrich.length });
-
-      for (let i = 0; i < toEnrich.length; i++) {
-        const game = toEnrich[i];
-        const bggId = game.bggId || BGG_MAPPING[game.name];
-
-        addLog(`[${i + 1}/${toEnrich.length}] ${game.name} (ID: ${bggId}) 처리 중...`);
-
-        try {
-          const data = await bggService.getGameDetails(bggId, game.type === 'expansion' ? 'boardgameexpansion' : 'boardgame');
-
-          if (!data || !data.image) {
-            addLog(`  ✗ 데이터를 찾을 수 없거나 이미지가 없습니다.`);
-            failed++;
-          } else {
-            // 필드가 비어있는 경우만 업데이트하거나 BGG 최신 정보로 덮어씀
-            const update = {
-              image: data.image,
-              thumbnail: data.thumbnail || data.image,
-              bggId: data.bggId,
-              // 기존에 없는 정보만 보강
-              ...(!game.year && data.year && { year: data.year }),
-              ...(!game.minPlayers && data.minPlayers && { minPlayers: data.minPlayers }),
-              ...(!game.maxPlayers && data.maxPlayers && { maxPlayers: data.maxPlayers }),
-              ...(!game.playingTime && data.playingTime && { playingTime: data.playingTime }),
-              ...(!game.rating && data.rating && { rating: data.rating }),
-              ...(!game.weight && data.weight && { weight: data.weight }),
-              ...(!game.description && data.description && { description: data.description }),
-              ...(!game.category && data.categories && { category: data.categories.join(', ') }),
-              ...(!game.mechanisms && data.mechanisms && { mechanisms: data.mechanisms.join(', ') }),
-            };
-
-            await updateDoc(doc(db, 'games', game.docId), update);
-            addLog(`  ✓ 업데이트 완료`);
-            success++;
-          }
-        } catch (e) {
-          addLog(`  ✗ 오류 발생: ${e.message}`);
-          failed++;
-        }
-
-        setStats({ success, failed, total: toEnrich.length });
-
-        // API 레이트 리밋 방지를 위해 지연 시간 추가
-        await sleep(1200);
-
-        // 10개마다 조금 더 길게 휴식
-        if ((i + 1) % 10 === 0 && i < toEnrich.length - 1) {
-          addLog(`--- API 부하 방지를 위해 3초간 대기합니다 ---`);
-          await sleep(3000);
-        }
-      }
-
-      addLog(`\n✅ 일괄 작업 완료! (성공: ${success}, 실패: ${failed})`);
     } catch (err) {
       addLog(`\n❌ 치명적 오류: ${err.message}`);
     } finally {
@@ -130,14 +175,42 @@ export default function BggEnricher({ onDone }) {
               <Loader2 className={running ? "animate-spin" : ""} size={20} style={{ color: 'var(--accent-primary)' }} />
             </div>
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: '800' }}>BGG 데이터 일괄 보강</h2>
-              <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>이미지/정보가 부족한 게임 자동 수집</p>
+              <h2 style={{ fontSize: '18px', fontWeight: '800' }}>데이터 일괄 보강 도구</h2>
+              <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>BGG 상세정보 및 Boardlife ID 자동 수집</p>
             </div>
           </div>
           <button onClick={onDone} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '4px' }}>
             <X size={24} />
           </button>
         </div>
+
+        {/* 모드 선택 탭 */}
+        {!running && !done && (
+          <div style={{ display: 'flex', padding: '12px 24px 0 24px', gap: '8px' }}>
+            <button
+              onClick={() => setMode('bgg')}
+              className={`btn-ghost ${mode === 'bgg' ? 'active' : ''}`}
+              style={{
+                flex: 1, padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
+                background: mode === 'bgg' ? 'var(--accent-primary)' : 'rgba(255,255,255,0.05)',
+                color: mode === 'bgg' ? '#fff' : 'var(--text-secondary)'
+              }}
+            >
+              🖼️ BGG 이미지 & 상세정보 보강
+            </button>
+            <button
+              onClick={() => setMode('boardlife')}
+              className={`btn-ghost ${mode === 'boardlife' ? 'active' : ''}`}
+              style={{
+                flex: 1, padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
+                background: mode === 'boardlife' ? 'var(--accent-primary)' : 'rgba(255,255,255,0.05)',
+                color: mode === 'boardlife' ? '#fff' : 'var(--text-secondary)'
+              }}
+            >
+              🔗 Boardlife ID 자동 수집
+            </button>
+          </div>
+        )}
 
         {/* 대시보드 / 통계 */}
         <div style={{ padding: '20px 24px', background: 'rgba(255,255,255,0.02)', display: 'flex', gap: '20px' }}>
@@ -201,7 +274,7 @@ export default function BggEnricher({ onDone }) {
               className="btn-primary"
               style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '700' }}
             >
-              <Play size={16} fill="currentColor" /> 수집 시작
+              <Play size={16} fill="currentColor" /> {mode === 'bgg' ? 'BGG 수집 시작' : 'Boardlife ID 수집 시작'}
             </button>
           )}
           {done && (
@@ -222,3 +295,4 @@ export default function BggEnricher({ onDone }) {
     </div>
   );
 }
+

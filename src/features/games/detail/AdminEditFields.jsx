@@ -39,11 +39,11 @@ export default function AdminEditFields({ editData, onInputChange, children }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)', marginTop: '4px' }}>
         <div className="form-group">
           <label className="form-label">보드라이프 ID</label>
-          <input value={editData.boardlifeId} onChange={e => onInputChange('boardlifeId', e.target.value)} className="form-input" />
+          <input value={editData.boardlifeId || ''} onChange={e => onInputChange('boardlifeId', e.target.value)} className="form-input" />
         </div>
         <div className="form-group">
           <label className="form-label">BGG ID</label>
-          <input value={editData.bggId} onChange={e => onInputChange('bggId', e.target.value)} className="form-input" />
+          <input value={editData.bggId || ''} onChange={e => onInputChange('bggId', e.target.value)} className="form-input" />
         </div>
       </div>
     </div>

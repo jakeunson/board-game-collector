@@ -12,6 +12,7 @@ import {
   translateTermList
 } from '../../utils/gameDataExtractor';
 import { bggService } from '../../utils/bggService';
+import { boardlifeService } from '../../utils/boardlifeService';
 import { proxyFetchHtml, proxyFetchJson } from '../../utils/proxyFetch';
 import { Dice5, Search } from 'lucide-react';
 
@@ -124,6 +125,19 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
         return;
       }
 
+      setStatusMessage('보드라이프 ID 자동 검색 중...');
+      let autoBoardlifeId = '';
+      try {
+        const targetName = customKoreanName.trim() || bggDetailData.name || '';
+        autoBoardlifeId = await boardlifeService.getBoardlifeIdFromGameName(
+          targetName,
+          bggDetailData.englishName,
+          bggDetailData.bggId
+        ) || '';
+      } catch (blErr) {
+        console.warn('Boardlife ID auto lookup failed:', blErr);
+      }
+
       setStatusMessage('컬렉션에 게임 저장 중...');
       const newGame = {
         name: customKoreanName.trim() || bggDetailData.name || '',
@@ -131,7 +145,7 @@ export default function AddGameModal({ onClose, onAddSuccess }) {
         type: bggDetailData.type === 'expansion' ? 'expansion' : 'base',
         year: bggDetailData.year || '',
         bggId: bggDetailData.bggId || '',
-        boardlifeId: '',
+        boardlifeId: autoBoardlifeId,
         minPlayers: bggDetailData.minPlayers ? Number(bggDetailData.minPlayers) : '',
         maxPlayers: bggDetailData.maxPlayers ? Number(bggDetailData.maxPlayers) : '',
         playingTime: bggDetailData.playingTime ? Number(bggDetailData.playingTime) : '',
